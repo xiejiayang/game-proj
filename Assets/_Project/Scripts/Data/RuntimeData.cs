@@ -219,6 +219,7 @@ namespace Dujiangyan.Data
         [Range(0f, 1f)]
         public float sfxVolume;
         public int languageIndex;
+        public int qualityIndex;
     }
 
     /// <summary>
@@ -347,7 +348,8 @@ namespace Dujiangyan.Data
             {
                 musicVolume = 0.7f,
                 sfxVolume = 0.7f,
-                languageIndex = 0
+                languageIndex = 0,
+                qualityIndex = 1
             };
         }
 

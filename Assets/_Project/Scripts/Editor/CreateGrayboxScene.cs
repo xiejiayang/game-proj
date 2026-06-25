@@ -221,6 +221,8 @@ public class CreateGrayboxScene
         var sfxLabel = CreateText(settingsPanel.transform, "SfxLabel", "音效", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(10, -15), new Vector2(60, 15), 14, TextAlignmentOptions.Left);
         var sfxSliderGO = CreateSlider(settingsPanel.transform, new Vector2(70, 0), "SfxSlider");
+        var qualityBtn = CreateButton(pauseGO.transform, "画质：中", new Vector2(-80, -100), null);
+        var languageBtn = CreateButton(pauseGO.transform, "语言：中文", new Vector2(80, -100), null);
         var titleBtn = CreateButton(pauseGO.transform, "返回标题", new Vector2(0, -160), null);
 
         var pauseMenu = pauseGO.AddComponent<PauseMenu>();
@@ -229,6 +231,8 @@ public class CreateGrayboxScene
         SetField(pauseMenu, "retryButton", retryBtnPause);
         SetField(pauseMenu, "musicSlider", musicSliderGO.GetComponent<Slider>());
         SetField(pauseMenu, "sfxSlider", sfxSliderGO.GetComponent<Slider>());
+        SetField(pauseMenu, "qualityButton", qualityBtn);
+        SetField(pauseMenu, "languageButton", languageBtn);
         SetField(pauseMenu, "titleButton", titleBtn);
 
         // Wire LevelUI
