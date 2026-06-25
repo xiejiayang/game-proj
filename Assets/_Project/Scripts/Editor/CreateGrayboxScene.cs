@@ -95,6 +95,7 @@ public class CreateGrayboxScene
         services.AddComponent<PuzzleSystem>();
         services.AddComponent<WaterSimulation>();
         services.AddComponent<BlockPlacement>();
+        services.AddComponent<PerformanceManager>();
 
         // UI Canvas
         var canvasGO = new GameObject("Canvas");
