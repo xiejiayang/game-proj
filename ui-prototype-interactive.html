@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>都江堰 · 可交互原型（含水流模拟）</title>
+  <style>
+    :root {
+      --ink-dark: #1a1a1a;
+      --ink-mid: #4a4a4a;
+      --ink-light: #8a8a8a;
+      --paper: #f7f3e9;
+      --paper-dark: #e8e0d0;
+      --accent: #2d5a4a;
+      --accent-light: #4a8a72;
+      --danger: #8b3a3a;
+      --water: #3a5a6a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+    }
+
+    body {
+      font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+      background: #d4cec0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .phone {
+      width: 375px;
+      height: 812px;
+      background: var(--paper);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      position: relative;
+      border: 8px solid #2a2a2a;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      background: var(--paper);
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .paper-texture {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ===== 标题页 ===== */
+    .title-screen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+      z-index: 2;
+    }
+
+    .ink-logo {
+      width: 180px;
+      height: 180px;
+      border: 3px solid var(--ink-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .ink-logo span { font-size: 72px; color: var(--ink-dark); font-weight: 700; }
+
+    .game-title { font-size: 32px; color: var(--ink-dark); margin-bottom: 8px; letter-spacing: 6px; }
+    .game-subtitle { font-size: 14px; color: var(--ink-mid); margin-bottom: 60px; letter-spacing: 2px; }
+
+    .btn {
+      background: transparent;
+      border: 2px solid var(--ink-dark);
+      color: var(--ink-dark);
+      padding: 14px 48px;
+      font-size: 18px;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 8px 0;
+      transition: all 0.3s ease;
+      letter-spacing: 4px;
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .btn-primary {
+      background: var(--ink-dark);
+      color: var(--paper);
+    }
+
+    .btn-small { padding: 8px 24px; font-size: 14px; }
+
+    /* ===== 引子页 ===== */
+    .intro-screen {
+      padding: 30px;
+      justify-content: space-between;
+      z-index: 2;
+    }
+
+    .intro-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .intro-title { font-size: 24px; color: var(--ink-dark); letter-spacing: 4px; }
+    .skip-link { font-size: 13px; color: var(--ink-light); text-decoration: none; border-bottom: 1px solid var(--ink-light); }
+
+    .intro-scene {
+      flex: 1;
+      background: linear-gradient(180deg, #c9d4d8 0%, #e8e0d0 60%, #d4cec0 100%);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .mountain {
+      position: absolute;
+      bottom: 80px;
+      width: 0;
+      height: 0;
+      border-left: 120px solid transparent;
+      border-right: 120px solid transparent;
+      border-bottom: 160px solid rgba(45, 90, 74, 0.3);
+    }
+
+    .mountain::after {
+      content: '';
+      position: absolute;
+      left: -80px;
+      top: 60px;
+      width: 0;
+      height: 0;
+      border-left: 80px solid transparent;
+      border-right: 80px solid transparent;
+      border-bottom: 100px solid rgba(45, 90, 74, 0.2);
+    }
+
+    .river {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 80px;
+      background: linear-gradient(90deg, transparent, var(--water), transparent);
+      opacity: 0.6;
+    }
+
+    .wall {
+      position: absolute;
+      bottom: 60px;
+      width: 120px;
+      height: 40px;
+      background: var(--ink-mid);
+      border-radius: 4px;
+    }
+
+    .crack {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: var(--danger);
+      transform: rotate(15deg);
+    }
+
+    .intro-text {
+      padding: 20px;
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--ink-mid);
+      text-align: center;
+      z-index: 2;
+      background: rgba(247, 243, 233, 0.8);
+      border-radius: 12px;
+      margin: 20px;
+    }
+
+    /* ===== 游戏主界面 ===== */
+    .game-screen { position: relative; z-index: 2; }
+
+    .game-hud-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(247,243,233,0.95) 0%, transparent 100%);
+    }
+
+    .level-info { display: flex; flex-direction: column; }
+    .level-name { font-size: 20px; color: var(--ink-dark); letter-spacing: 2px; }
+    .level-phase { font-size: 12px; color: var(--accent); margin-top: 4px; }
+
+    .resource-bar { display: flex; gap: 12px; margin-top: 8px; }
+    .resource-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-mid); }
+    .resource-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .resource-dot.time { background: var(--water); }
+    .resource-dot.labor { background: var(--danger); }
+
+    .pause-btn {
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--ink-dark);
+      background: rgba(247,243,233,0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    #gameCanvas {
+      flex: 1;
+      background: #d4e0d8;
+      cursor: crosshair;
+      margin-bottom: 150px; /* 不被底部 toolbar 遮挡 */
+    }
+
+    .toolbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(247, 243, 233, 0.95);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .toolbar-items { display: flex; justify-content: center; gap: 16px; }
+
+    .toolbar-item {
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--ink-dark);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: rgba(255,255,255,0.4);
+      user-select: none;
+    }
+
+    .toolbar-item.active { background: rgba(45, 90, 74, 0.15); border-color: var(--accent); }
+    .toolbar-item.disabled { opacity: 0.4; pointer-events: none; }
+    .toolbar-icon { font-size: 22px; margin-bottom: 2px; }
+    .toolbar-count { font-size: 11px; color: var(--ink-mid); }
+
+    .drag-ghost {
+      position: fixed;
+      width: 50px;
+      height: 50px;
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      background: rgba(45, 90, 74, 0.2);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      pointer-events: none;
+      z-index: 1000;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .drag-ghost.active { display: flex; }
+
+    .action-bar { display: flex; justify-content: space-between; align-items: center; }
+
+    .undo-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--ink-mid);
+      background: transparent;
+      color: var(--ink-mid);
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .reset-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--danger);
+      background: transparent;
+      color: var(--danger);
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 8px;
+    }
+
+    .release-btn {
+      flex: 1;
+      margin-left: 12px;
+      padding: 12px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-family: inherit;
+      font-size: 16px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .release-btn:disabled {
+      background: var(--ink-light);
+      cursor: not-allowed;
+    }
+
+    .hint-pill {
+      position: absolute;
+      top: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(247, 243, 233, 0.95);
+      border: 1px solid var(--ink-dark);
+      border-radius: 20px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--ink-dark);
+      z-index: 10;
+      display: none;
+      max-width: 90%;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .hint-pill.active { display: block; }
+
+    /* ===== 弹窗通用 ===== */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+
+    .overlay.active { display: flex; }
+
+    .hint-overlay { background: rgba(0,0,0,0.4); }
+    .pause-overlay { background: rgba(247, 243, 233, 0.95); flex-direction: column; }
+    .result-overlay { background: rgba(0,0,0,0.5); flex-direction: column; }
+
+    .hint-card {
+      background: var(--paper);
+      border: 2px solid var(--ink-dark);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .hint-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--paper-dark);
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      border: 2px solid var(--ink-dark);
+    }
+
+    .hint-speaker { font-size: 14px; color: var(--ink-light); margin-bottom: 8px; }
+    .hint-text { font-size: 16px; color: var(--ink-dark); line-height: 1.8; margin-bottom: 20px; }
+
+    .pause-title { font-size: 28px; color: var(--ink-dark); margin-bottom: 30px; letter-spacing: 6px; }
+
+    .result-card {
+      background: var(--paper);
+      border: 3px solid var(--ink-dark);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .seal {
+      width: 90px;
+      height: 90px;
+      border: 4px solid var(--danger);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: var(--danger);
+      font-size: 32px;
+      font-weight: bold;
+      transform: rotate(-5deg);
+    }
+
+    .seal.success { border-color: var(--accent); color: var(--accent); }
+
+    .result-title { font-size: 26px; color: var(--ink-dark); margin-bottom: 10px; letter-spacing: 4px; }
+    .result-desc { font-size: 14px; color: var(--ink-mid); margin-bottom: 20px; line-height: 1.6; }
+
+    .result-screen-2 { display: none; }
+    .result-screen-2.active { display: block; }
+
+    .gallery-title { font-size: 20px; color: var(--accent); margin-bottom: 12px; }
+    .gallery-content { font-size: 14px; color: var(--ink-mid); line-height: 1.8; text-align: left; margin-bottom: 20px; }
+
+    .result-actions { display: flex; gap: 10px; justify-content: center; }
+
+    .dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-light); }
+    .dot.active { background: var(--ink-dark); }
+
+    /* ===== 设置页 ===== */
+    .settings-screen { padding: 30px; z-index: 2; }
+
+    .settings-header { display: flex; align-items: center; margin-bottom: 30px; }
+    .back-btn { width: 40px; height: 40px; border: 1px solid var(--ink-mid); background: transparent; border-radius: 50%; cursor: pointer; margin-right: 16px; font-size: 18px; }
+    .settings-title { font-size: 24px; color: var(--ink-dark); letter-spacing: 4px; }
+
+    .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .setting-label { font-size: 16px; color: var(--ink-dark); }
+
+    .toggle { width: 50px; height: 28px; background: var(--paper-dark); border-radius: 14px; position: relative; cursor: pointer; border: 1px solid var(--ink-light); }
+    .toggle.active { background: var(--accent); }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: left 0.3s; }
+    .toggle.active::after { left: 24px; }
+
+    .quality-options { display: flex; gap: 8px; }
+    .quality-btn { padding: 6px 12px; border: 1px solid var(--ink-mid); background: transparent; color: var(--ink-mid); cursor: pointer; font-family: inherit; font-size: 13px; }
+    .quality-btn.active { background: var(--ink-dark); color: var(--paper); border-color: var(--ink-dark); }
+
+    .corner-note { position: absolute; bottom: 12px; right: 16px; font-size: 11px; color: var(--ink-light); z-index: 5; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="paper-texture"></div>
+
+    <!-- 1. 启动/标题页 -->
+    <div class="screen title-screen active" id="screen-title">
+      <div class="ink-logo"><span>堰</span></div>
+      <h1 class="game-title">都江堰</h1>
+      <p class="game-subtitle">堵不如疏 · 顺势而为</p>
+      <button class="btn btn-primary" onclick="goTo('intro')">开始治水</button>
+      <button class="btn btn-small" onclick="goTo('settings')" style="margin-top: 30px;">设置</button>
+    </div>
+
+    <!-- 2. L1 引子页 -->
+    <div class="screen intro-screen" id="screen-intro">
+      <div class="intro-header">
+        <h2 class="intro-title">L1 · 堵</h2>
+        <a href="#" class="skip-link" onclick="goTo('game'); return false;">跳过</a>
+      </div>
+      <div class="intro-scene">
+        <div class="mountain"></div>
+        <div class="river"></div>
+        <div class="wall"><div class="crack"></div></div>
+        <div class="intro-text">
+          岷江汛期，官方下令筑高墙堵水。<br>
+          墙倒，村庄被淹。<br><br>
+          李冰说：「深淘滩，低作堰。」<br>
+          堵，不如疏。
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="goTo('game')">我来试试</button>
+    </div>
+
+    <!-- 3. 游戏主界面 -->
+    <div class="screen game-screen" id="screen-game">
+      <div class="game-hud-top">
+        <div class="level-info">
+          <div class="level-name">L1 · 堵</div>
+          <div class="level-phase" id="phase-text">编辑阶段</div>
+          <div class="resource-bar">
+            <div class="resource-item"><span class="resource-dot"></span>料 <span id="res-material">12</span></div>
+            <div class="resource-item"><span class="resource-dot labor"></span>工 <span id="res-labor">8</span></div>
+            <div class="resource-item"><span class="resource-dot time"></span>时 <span id="res-time">5</span></div>
+          </div>
+        </div>
+        <div class="pause-btn" onclick="togglePause(true)">❚❚</div>
+      </div>
+
+      <div class="hint-pill" id="hint-pill">点击河道放置竹笼，疏导水流</div>
+
+      <canvas id="gameCanvas"></canvas>
+
+      <div class="toolbar">
+        <div class="toolbar-items">
+          <div class="toolbar-item active" data-tool="bamboo" onpointerdown="startDragTool(event, 'bamboo')">
+            <div class="toolbar-icon">🧺</div>
+            <div class="toolbar-count">竹笼 ×<span id="count-bamboo">4</span></div>
+          </div>
+          <div class="toolbar-item" data-tool="maocha" onpointerdown="startDragTool(event, 'maocha')">
+            <div class="toolbar-icon">🪵</div>
+            <div class="toolbar-count">杩槎 ×<span id="count-maocha">3</span></div>
+          </div>
+          <div class="toolbar-item" data-tool="wall" onpointerdown="startDragTool(event, 'wall')">
+            <div class="toolbar-icon">🪨</div>
+            <div class="toolbar-count">石墙 ×<span id="count-wall">2</span></div>
+          </div>
+        </div>
+        <div class="action-bar">
+          <button class="undo-btn" onclick="undoLast()">撤销</button>
+          <button class="reset-btn" onclick="resetLevel()">重置</button>
+          <button class="release-btn" id="release-btn" onclick="releaseWater()">放水</button>
+        </div>
+      </div>
+
+      <!-- 提示弹窗 -->
+      <div class="overlay hint-overlay" id="hint-overlay">
+        <div class="hint-card">
+          <div class="hint-avatar">👴</div>
+          <div class="hint-speaker">老河工</div>
+          <div class="hint-text" id="hint-text">「弯子外头水性子急，硬堵要吃亏。」</div>
+          <button class="btn" onclick="closeHint()">知道了</button>
+        </div>
+      </div>
+
+      <!-- 暂停菜单 -->
+      <div class="overlay pause-overlay" id="pause-overlay">
+        <h2 class="pause-title">已暂停</h2>
+        <button class="btn" onclick="togglePause(false)">继续</button>
+        <button class="btn" onclick="resetLevel(); togglePause(false);">重试</button>
+        <button class="btn" onclick="togglePause(false); goTo('settings')">设置</button>
+        <button class="btn" onclick="togglePause(false); goTo('title')">返回标题</button>
+      </div>
+
+      <!-- 结算弹窗 -->
+      <div class="overlay result-overlay" id="result-overlay">
+        <div class="result-card">
+          <div class="result-screen-1 active" id="result-screen-1">
+            <div class="seal success" id="result-seal">安</div>
+            <h2 class="result-title" id="result-title">暂时安全</h2>
+            <p class="result-desc" id="result-desc">
+              竹笼分流，水势渐缓。<br>
+              村庄保住了，但汛期还会再来。
+            </p>
+            <div class="dots">
+              <div class="dot active"></div>
+              <div class="dot"></div>
+            </div>
+            <div style="margin-top: 16px;">
+              <button class="btn" onclick="nextResultScreen()">查看碑廊</button>
+            </div>
+          </div>
+          <div class="result-screen-2" id="result-screen-2">
+            <h3 class="gallery-title">堵不如疏</h3>
+            <div class="gallery-content">
+              李冰治水，不以高墙硬堵岷江，而因势利导，分水排沙。<br><br>
+              竹笼、杩槎、鱼嘴、飞沙堰，皆为“疏”之工具。水至柔而至刚，顺之则安，逆之则危。
+            </div>
+            <div class="dots">
+              <div class="dot"></div>
+              <div class="dot active"></div>
+            </div>
+            <div class="result-actions" style="margin-top: 16px;">
+              <button class="btn" id="btn-retry" onclick="resetLevel(); closeResult()">再试一次</button>
+              <button class="btn btn-primary" id="btn-next" onclick="alert('下一关占位')">下一关</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 设置页 -->
+    <div class="screen settings-screen" id="screen-settings">
+      <div class="settings-header">
+        <button class="back-btn" onclick="goBackFromSettings()">‹</button>
+        <h2 class="settings-title">设置</h2>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">音乐</span>
+        <div class="setting-control"><div class="toggle active" onclick="this.classList.toggle('active')"></div></div>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">音效</span>
+        <div class="setting-control"><div class="toggle active" onclick="this.classList.toggle('active')"></div></div>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">画质</span>
+        <div class="setting-control quality-options">
+          <button class="quality-btn">低</button>
+          <button class="quality-btn active">中</button>
+          <button class="quality-btn">高</button>
+        </div>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">语言</span>
+        <div class="setting-control"><span style="font-size: 14px; color: var(--ink-mid);">简体中文</span></div>
+      </div>
+    </div>
+
+    <!-- 拖拽时的跟随物 -->
+    <div class="drag-ghost" id="drag-ghost">🧺</div>
+
+    <div class="corner-note">可交互原型 · 含水流模拟</div>
+  </div>
+
+  <script>
+    // ===== 全局状态 =====
+    let currentScreen = 'title';
+    let settingsReturnTo = 'title';
+
+    // ===== 游戏状态 =====
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let gameState = 'editing'; // editing, simulating, settling
+    let selectedTool = 'bamboo';
+    let particles = [];
+    let placedBlocks = [];
+    let failCount = 0;
+    let simulationTime = 0;
+    let villageHitCount = 0;
+    let animationId = null;
+
+    const inventory = {
+      bamboo: 4,
+      maocha: 3,
+      wall: 2
+    };
+
+    const initialInventory = { ...inventory };
+
+    // 游戏区域尺寸
+    let canvasWidth, canvasHeight;
+
+    // 场景元素（在 resize 中计算）
+    let river = {};
+    let village = {};
+    let prebuiltWall = {};
+    let source = {};
+
+    function resizeCanvas() {
+      // 使用 canvas 实际显示尺寸，避免被 toolbar 遮挡或坐标错位
+      canvasWidth = canvas.clientWidth || 375;
+      canvasHeight = canvas.clientHeight || 500;
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // 定义场景元素
+      river = {
+        x: canvasWidth * 0.15,
+        y: 0,
+        width: canvasWidth * 0.7,
+        height: canvasHeight
+      };
+
+      source = {
+        x: canvasWidth / 2,
+        y: 20,
+        width: 40,
+        height: 20
+      };
+
+      prebuiltWall = {
+        x: canvasWidth / 2 - 50,
+        y: canvasHeight * 0.45,
+        width: 100,
+        height: 20,
+        health: 0,
+        maxHealth: 100
+      };
+
+      village = {
+        x: canvasWidth / 2 - 35,
+        y: canvasHeight - 90,
+        width: 70,
+        height: 70
+      };
+    }
+
+    // ===== 页面导航 =====
+    function goTo(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + screenId).classList.add('active');
+
+      if (screenId === 'settings') {
+        settingsReturnTo = currentScreen === 'settings' ? 'title' : currentScreen;
+      }
+      currentScreen = screenId;
+
+      if (screenId === 'game') {
+        // 等浏览器完成布局后再计算 canvas 尺寸
+        requestAnimationFrame(() => {
+          resizeCanvas();
+          resetLevel();
+        });
+      }
+    }
+
+    function goBackFromSettings() {
+      goTo(settingsReturnTo);
+    }
+
+    // ===== 工具选择 =====
+    function selectTool(tool) {
+      if (gameState !== 'editing') return;
+      selectedTool = tool;
+      document.querySelectorAll('.toolbar-item').forEach(i => i.classList.remove('active'));
+      document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+    }
+
+    // ===== 拖拽放置 =====
+    let draggingTool = null;
+    let dragGhost = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    function startDragTool(e, tool) {
+      if (gameState !== 'editing') return;
+      if (inventory[tool] <= 0) return;
+
+      e.preventDefault();
+      selectTool(tool);
+
+      draggingTool = tool;
+      dragGhost = document.getElementById('drag-ghost');
+      dragGhost.textContent = tool === 'bamboo' ? '🧺' : (tool === 'maocha' ? '🪵' : '🪨');
+      dragGhost.classList.add('active');
+
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragStartX = clientX;
+      dragStartY = clientY;
+
+      dragGhost.style.left = clientX + 'px';
+      dragGhost.style.top = clientY + 'px';
+
+      document.addEventListener('pointermove', onDragMove);
+      document.addEventListener('pointerup', onDragEnd);
+      document.addEventListener('pointercancel', onDragEnd);
+    }
+
+    function onDragMove(e) {
+      if (!draggingTool) return;
+      e.preventDefault();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragGhost.style.left = clientX + 'px';
+      dragGhost.style.top = clientY + 'px';
+    }
+
+    function onDragEnd(e) {
+      if (!draggingTool) return;
+
+      const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+      // 判断释放位置是否在 canvas 上
+      const rect = canvas.getBoundingClientRect();
+      if (clientX >= rect.left && clientX <= rect.right &&
+          clientY >= rect.top && clientY <= rect.bottom) {
+        const pos = getCanvasPosFromClient(clientX, clientY);
+        placeBlock(pos.x, pos.y);
+      }
+
+      // 清理
+      dragGhost.classList.remove('active');
+      draggingTool = null;
+      document.removeEventListener('pointermove', onDragMove);
+      document.removeEventListener('pointerup', onDragEnd);
+      document.removeEventListener('pointercancel', onDragEnd);
+    }
+
+    function getCanvasPosFromClient(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function updateInventoryUI() {
+      document.getElementById('count-bamboo').textContent = inventory.bamboo;
+      document.getElementById('count-maocha').textContent = inventory.maocha;
+      document.getElementById('count-wall').textContent = inventory.wall;
+
+      document.querySelectorAll('.toolbar-item').forEach(item => {
+        const tool = item.dataset.tool;
+        if (inventory[tool] <= 0) {
+          item.classList.add('disabled');
+        } else {
+          item.classList.remove('disabled');
+        }
+      });
+    }
+
+    // ===== 放置/撤销/重置 =====
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      // 把屏幕坐标换算成 canvas 内部坐标，处理 CSS 显示尺寸和 canvas 实际分辨率不一致的情况
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function snapToGrid(val) {
+      return Math.round(val / 20) * 20;
+    }
+
+    function placeBlock(x, y) {
+      if (gameState !== 'editing') return;
+      if (inventory[selectedTool] <= 0) return;
+
+      // 只能放在河道内
+      if (x < river.x + 10 || x > river.x + river.width - 10) return;
+      if (y < 80 || y > canvasHeight - 100) return;
+
+      // 检查重叠
+      const snappedX = snapToGrid(x);
+      const snappedY = snapToGrid(y);
+
+      for (const block of placedBlocks) {
+        const dx = block.x - snappedX;
+        const dy = block.y - snappedY;
+        if (Math.sqrt(dx*dx + dy*dy) < 35) return;
+      }
+
+      const blockHealth = selectedTool === 'bamboo' ? 30 : (selectedTool === 'maocha' ? 60 : 120);
+      placedBlocks.push({
+        type: selectedTool,
+        x: snappedX,
+        y: snappedY,
+        width: selectedTool === 'bamboo' ? 50 : (selectedTool === 'maocha' ? 60 : 50),
+        height: selectedTool === 'bamboo' ? 30 : (selectedTool === 'maocha' ? 20 : 25),
+        rotation: 0,
+        health: blockHealth,
+        maxHealth: blockHealth
+      });
+
+      inventory[selectedTool]--;
+      updateInventoryUI();
+      updateResourceCost();
+      hideHintPill();
+      draw();
+    }
+
+    function undoLast() {
+      if (gameState !== 'editing') return;
+      if (placedBlocks.length === 0) return;
+
+      const block = placedBlocks.pop();
+      inventory[block.type]++;
+      updateInventoryUI();
+      updateResourceCost();
+      draw();
+    }
+
+    function resetLevel() {
+      gameState = 'editing';
+      particles = [];
+      placedBlocks = [];
+      failCount = 0;
+      simulationTime = 0;
+      villageHitCount = 0;
+
+      Object.assign(inventory, initialInventory);
+      prebuiltWall.health = 0; // 开局没有预置石墙
+
+      updateInventoryUI();
+      updateResourceCost();
+      updatePhaseText();
+
+      document.getElementById('release-btn').disabled = false;
+      document.getElementById('release-btn').textContent = '放水';
+      closeResult();
+
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+
+      draw();
+    }
+
+    function updateResourceCost() {
+      const usedBamboo = initialInventory.bamboo - inventory.bamboo;
+      const usedMaocha = initialInventory.maocha - inventory.maocha;
+      const usedWall = initialInventory.wall - inventory.wall;
+
+      document.getElementById('res-material').textContent = Math.max(0, 12 - usedBamboo * 2 - usedWall * 3);
+      document.getElementById('res-labor').textContent = Math.max(0, 8 - (usedBamboo + usedMaocha + usedWall) * 1);
+      document.getElementById('res-time').textContent = Math.max(0, 5 - Math.floor(usedBamboo / 2));
+    }
+
+    function updatePhaseText() {
+      const phaseText = document.getElementById('phase-text');
+      if (gameState === 'editing') phaseText.textContent = '编辑阶段';
+      else if (gameState === 'simulating') phaseText.textContent = '模拟阶段';
+      else if (gameState === 'settling') phaseText.textContent = '结算阶段';
+    }
+
+    // ===== 水流模拟 =====
+    function releaseWater() {
+      if (gameState !== 'editing') return;
+      if (placedBlocks.length === 0) {
+        showHintPill('先在河里摆上构件');
+        return;
+      }
+
+      gameState = 'simulating';
+      simulationTime = 0;
+      villageHitCount = 0;
+      particles = [];
+
+      updatePhaseText();
+      document.getElementById('release-btn').disabled = true;
+      document.getElementById('release-btn').textContent = '模拟中…';
+
+      // 生成初始粒子
+      for (let i = 0; i < 20; i++) {
+        particles.push(createParticle());
+      }
+
+      animate();
+    }
+
+    function createParticle() {
+      return {
+        x: source.x + (Math.random() - 0.5) * source.width,
+        y: source.y + Math.random() * 10,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: 2 + Math.random() * 1.5,
+        life: 1.0,
+        size: 3 + Math.random() * 3
+      };
+    }
+
+    function animate() {
+      if (gameState !== 'simulating') return;
+
+      simulationTime += 1/60;
+
+      // 持续生成粒子
+      if (simulationTime < 5 && Math.random() < 0.3) {
+        particles.push(createParticle());
+      }
+
+      // 更新粒子
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+
+        // 基础重力/速度
+        p.vy += 0.05;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // 河道边界约束
+        if (p.x < river.x + 5) {
+          p.x = river.x + 5;
+          p.vx *= -0.5;
+        }
+        if (p.x > river.x + river.width - 5) {
+          p.x = river.x + river.width - 5;
+          p.vx *= -0.5;
+        }
+
+        // 与预置墙交互（开局没有墙，直接跳过）
+        if (prebuiltWall.health > 0 && rectIntersect(p.x, p.y, p.size, p.size, prebuiltWall.x, prebuiltWall.y, prebuiltWall.width, prebuiltWall.height)) {
+          // 墙会被冲毁
+          prebuiltWall.health -= 2.5;
+          p.vy *= -0.3;
+          p.vx += (Math.random() - 0.5) * 3;
+
+          if (prebuiltWall.health <= 0) {
+            // 墙倒了，水直接冲向村庄
+            p.vx += 2;
+          }
+        }
+
+        // 与放置构件交互
+        let hitBlock = false;
+        for (const block of placedBlocks) {
+          if (hitBlock) break;
+          if (rectIntersect(p.x, p.y, p.size, p.size, block.x - block.width/2, block.y - block.height/2, block.width, block.height)) {
+            hitBlock = true;
+            if (block.type === 'bamboo') {
+              // 竹笼：分流
+              const side = p.x < block.x ? -1 : 1;
+              p.vx = side * (2 + Math.random());
+              p.vy *= 0.6;
+              p.y = block.y - block.height/2 - p.size;
+            } else if (block.type === 'maocha') {
+              // 杩槎：减速并横向分散
+              p.vy *= 0.4;
+              p.vx += (Math.random() - 0.5) * 4;
+            } else if (block.type === 'wall') {
+              // 石墙：反弹
+              p.vy *= -0.5;
+              p.vx += (Math.random() - 0.5) * 2;
+            }
+
+            // 水流冲击造成耐久伤害
+            block.health -= 1;
+          }
+        }
+
+        // 移除被冲垮的构件
+        placedBlocks = placedBlocks.filter(block => block.health > 0);
+
+        // 村庄判定
+        if (rectIntersect(p.x, p.y, p.size, p.size, village.x, village.y, village.width, village.height)) {
+          villageHitCount++;
+          p.life = 0; // 粒子被吸收
+        }
+
+        // 生命周期
+        p.life -= 0.003;
+        if (p.y > canvasHeight || p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      // 判定结束
+      if (simulationTime > 5) {
+        settleGame();
+        return;
+      }
+
+      draw();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+      return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+    }
+
+    function settleGame() {
+      gameState = 'settling';
+      updatePhaseText();
+
+      const success = villageHitCount < 15;
+      const frugal = placedBlocks.length <= 3;
+
+      if (!success) {
+        failCount++;
+        showResult(false);
+      } else {
+        showResult(true, frugal);
+      }
+    }
+
+    // ===== 绘制 =====
+    function draw() {
+      // 背景
+      ctx.fillStyle = '#d4e0d8';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // 河道
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+      gradient.addColorStop(0, 'rgba(58, 90, 106, 0.2)');
+      gradient.addColorStop(1, 'rgba(58, 90, 106, 0.4)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(river.x, river.y, river.width, river.height);
+
+      // 河岸线
+      ctx.strokeStyle = 'rgba(45, 90, 74, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(river.x, 0);
+      ctx.lineTo(river.x, canvasHeight);
+      ctx.moveTo(river.x + river.width, 0);
+      ctx.lineTo(river.x + river.width, canvasHeight);
+      ctx.stroke();
+
+      // 水源
+      ctx.fillStyle = 'rgba(58, 90, 106, 0.6)';
+      ctx.beginPath();
+      ctx.ellipse(source.x, source.y, source.width/2, source.height/2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 预置墙
+      if (prebuiltWall.health > 0) {
+        ctx.fillStyle = `rgba(74, 74, 74, ${0.3 + 0.7 * (prebuiltWall.health / prebuiltWall.maxHealth)})`;
+        ctx.fillRect(prebuiltWall.x, prebuiltWall.y, prebuiltWall.width, prebuiltWall.height);
+        ctx.strokeStyle = '#8b3a3a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(prebuiltWall.x + prebuiltWall.width/2, prebuiltWall.y);
+        ctx.lineTo(prebuiltWall.x + prebuiltWall.width/2 + 10, prebuiltWall.y + prebuiltWall.height);
+        ctx.stroke();
+      }
+
+      // 村庄
+      ctx.fillStyle = 'rgba(139, 90, 43, 0.4)';
+      ctx.fillRect(village.x, village.y, village.width, village.height);
+      ctx.strokeStyle = 'rgba(139, 90, 43, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(village.x, village.y, village.width, village.height);
+      ctx.fillStyle = 'rgba(26, 26, 26, 0.6)';
+      ctx.font = '12px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('村庄', village.x + village.width/2, village.y + village.height/2 + 4);
+
+      // 放置的构件
+      for (const block of placedBlocks) {
+        ctx.save();
+        ctx.translate(block.x, block.y);
+
+        if (block.type === 'bamboo') {
+          ctx.fillStyle = 'rgba(139, 119, 71, 0.7)';
+          ctx.fillRect(-block.width/2, -block.height/2, block.width, block.height);
+          ctx.strokeStyle = 'rgba(74, 55, 28, 0.8)';
+          ctx.lineWidth = 1;
+          for (let i = -block.width/2 + 5; i < block.width/2; i += 8) {
+            ctx.beginPath();
+            ctx.moveTo(i, -block.height/2);
+            ctx.lineTo(i, block.height/2);
+            ctx.stroke();
+          }
+        } else if (block.type === 'maocha') {
+          ctx.fillStyle = 'rgba(101, 67, 33, 0.7)';
+          ctx.fillRect(-block.width/2, -block.height/2, block.width, block.height);
+          ctx.strokeStyle = 'rgba(60, 40, 20, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-block.width/2, -block.height/2, block.width, block.height);
+        } else if (block.type === 'wall') {
+          ctx.fillStyle = 'rgba(90, 90, 90, 0.7)';
+          ctx.fillRect(-block.width/2, -block.height/2, block.width, block.height);
+          ctx.strokeStyle = 'rgba(40, 40, 40, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-block.width/2, -block.height/2, block.width, block.height);
+        }
+
+        // 耐久血条
+        const hpRatio = block.health / block.maxHealth;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(-block.width/2, -block.height/2 - 8, block.width, 4);
+        ctx.fillStyle = hpRatio > 0.5 ? 'rgba(45, 90, 74, 0.9)' : (hpRatio > 0.25 ? 'rgba(200, 150, 50, 0.9)' : 'rgba(180, 50, 50, 0.9)');
+        ctx.fillRect(-block.width/2, -block.height/2 - 8, block.width * hpRatio, 4);
+
+        ctx.restore();
+      }
+
+      // 水粒子
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(30, 50, 60, ${0.5 * p.life})`;
+        ctx.fill();
+      }
+
+      // 网格提示（编辑阶段）
+      if (gameState === 'editing') {
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.lineWidth = 1;
+        for (let x = river.x; x < river.x + river.width; x += 20) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvasHeight);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvasHeight; y += 20) {
+          ctx.beginPath();
+          ctx.moveTo(river.x, y);
+          ctx.lineTo(river.x + river.width, y);
+          ctx.stroke();
+        }
+      }
+
+      // 调试信息
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`粒子: ${particles.length} | 村庄受击: ${villageHitCount} | 时间: ${simulationTime.toFixed(1)}s`, 10, canvasHeight - 10);
+    }
+
+    // ===== 提示 Pill =====
+    function showHintPill(text) {
+      const pill = document.getElementById('hint-pill');
+      pill.textContent = text;
+      pill.classList.add('active');
+      setTimeout(hideHintPill, 2500);
+    }
+
+    function hideHintPill() {
+      document.getElementById('hint-pill').classList.remove('active');
+    }
+
+    // ===== 结算弹窗 =====
+    function showResult(success, frugal) {
+      const overlay = document.getElementById('result-overlay');
+      const seal = document.getElementById('result-seal');
+      const title = document.getElementById('result-title');
+      const desc = document.getElementById('result-desc');
+      const screen1 = document.getElementById('result-screen-1');
+      const screen2 = document.getElementById('result-screen-2');
+
+      screen1.classList.add('active');
+      screen2.classList.remove('active');
+
+      const btnRetry = document.getElementById('btn-retry');
+      const btnNext = document.getElementById('btn-next');
+
+      if (success) {
+        seal.textContent = '安';
+        seal.className = 'seal success';
+        title.textContent = '暂时安全';
+        desc.innerHTML = frugal
+          ? '竹笼分流，水势渐缓。<br>用料节俭，李冰之法，已得三分。'
+          : '竹笼分流，水势渐缓。<br>村庄保住了，但汛期还会再来。';
+        btnRetry.style.display = 'none';
+        btnNext.style.display = 'inline-block';
+      } else {
+        seal.textContent = '倒';
+        seal.className = 'seal';
+        title.textContent = '村子仍被淹';
+        desc.innerHTML = '水势太猛，墙挡不住。<br>试试把竹笼摆到河道两侧，让水分开走。';
+        btnRetry.style.display = 'inline-block';
+        btnNext.style.display = 'none';
+      }
+
+      overlay.classList.add('active');
+
+      // 失败后 3 次以上触发老河工提示
+      if (!success && failCount >= 3) {
+        setTimeout(() => {
+          document.getElementById('hint-text').textContent = '「弯子外头水性子急，硬堵要吃亏。试试把竹笼摆到旁边，让水分开走。」';
+          document.getElementById('hint-overlay').classList.add('active');
+        }, 500);
+      }
+    }
+
+    function closeResult() {
+      document.getElementById('result-overlay').classList.remove('active');
+      document.getElementById('result-screen-1').classList.add('active');
+      document.getElementById('result-screen-2').classList.remove('active');
+    }
+
+    function nextResultScreen() {
+      document.getElementById('result-screen-1').classList.remove('active');
+      document.getElementById('result-screen-2').classList.add('active');
+    }
+
+    function closeHint() {
+      document.getElementById('hint-overlay').classList.remove('active');
+    }
+
+    // ===== 暂停 =====
+    function togglePause(show) {
+      document.getElementById('pause-overlay').classList.toggle('active', show);
+    }
+
+    // ===== Canvas 事件 =====
+    // 现在通过拖拽工具栏物品到 canvas 上放置，不再直接点击 canvas 放置
+
+    // 设置页画质按钮
+    document.querySelectorAll('.quality-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.parentElement.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // 初始绘制
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      draw();
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentScreen === 'game') {
+        requestAnimationFrame(() => {
+          resizeCanvas();
+          draw();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

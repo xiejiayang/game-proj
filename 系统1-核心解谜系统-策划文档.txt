@@ -1,0 +1,430 @@
+
+
+  1 
+
+                            V1.0
+                        2026-06-24
+ · 1           2
+
+-- 1  V1.0 --
+ · 1                   3
+
+
+
+                    
+V1.0    2026-06-24  
+
+        -- 1  V1.0 --
+ · 1               4
+
+
+
+
+
+
+
+
+
+
+
+//
+
+
+    -- 1  V1.0 --
+ · 1           5
+
+
+
+1.1 
+
+
+        --
+        
+        
+        
+
+1.2 
+
+        
+        
+        
+        
+
+1.3 
+
+
+
+
+-- 1  V1.0 --
+ · 1                 6
+
+
+
+2.1 
+
+/
+
+
+2.2 
+
+    /      ++  
+
+        L1
+        
+        /
+        
+        
+        ++
+        
+
+2.3     
+        
+        //
+        
+        
+        
+        
+        
+        
+ 
+ 
+
+      -- 1  V1.0 --
+ · 1                                                             7
+
+
+
+3.1 
+
+ ID 
+ ID "L1"
+LevelRuntime 
+
+
+         LevelConfig 
+        
+         Editing 
+        
+
+3.2 
+
+
+        Editing
+        Simulating/
+        Settling//
+        Paused
+
+
+        Editing  Simulating
+        Simulating  Settling/
+        Settling  Editing
+        Simulating  Paused
+        Paused  Simulating
+
+3.3 
+
+
+
+
+                                                  -- 1  V1.0 --
+ · 1                8
+
+         < 
+        
+        
+          
+
+         + 
+            
+         +   
+
+3.4 /
+
+
+        Undo// 20 
+        Reset
+        Retry
+
+-- 1  V1.0 --
+ · 1                                                                         9
+
+
+
+4.1 LevelConfig
+
+                                       
+id
+act                   string            L1
+title
+targetDuration        int              1|2|3
+terrain
+waterSource           string           
+village
+inventory             float            
+
+resourceLimit         TerrainConfig    
+frugalThreshold
+hintTree              WaterSourceConfig 
+narrative
+galleryUnlocks        VillageConfig    
+hiddenGalleryUnlocks
+                      Dictionary<string key=IDvalue=
+                      ,int>
+
+                      ResourceCost     //
+
+                      ResourceCost     
+
+                      HintNode[]       
+
+                      NarrativeBeat[] 
+
+                      string[]         ID
+
+                      string[]         ID
+
+4.2 PuzzleRuntime
+
+                                         
+levelId
+state                 string             ID
+placedBlocks
+inventory             PuzzleState        Editing/Simulating/Settling/Paused
+
+consumedResource      BlockInstance[]    
+undoStack
+                      Dictionary<string,in 
+                      t>
+
+                      ResourceCost       
+
+                      EditAction[]       
+
+                      -- 1  V1.0 --
+ · 1                                                      10
+
+simulationTime    float          
+villageHitCount   int            
+result            PuzzleResult?  
+
+4.3 PuzzleResult
+
+                                 
+isSuccess         bool           
+isFrugal          bool           
+failReason        string         flood/destroyed/timeout
+consumedResource  ResourceCost   
+simulationTime    float          
+unlockedGallery   string[]       
+
+                  -- 1  V1.0 --
+ · 1                                                             11
+
+
+
+5.1 
+
+         LevelConfig PuzzleRuntime
+
+    
+         
+         /
+         /
+         
+         //
+
+    
+         
+          Simulating 
+         
+
+    
+         
+         
+         
+         
+
+    
+         /
+          Settling 
+         
+
+    
+         
+         
+         
+
+5.2 
+
+                                                  -- 1  V1.0 --
+ · 1                                   12
+
+Editing [/]> Simulating
+Simulating [/]> Settling
+Settling []> Editing
+Settling []> 
+Simulating []> Paused
+Paused []> Simulating
+
+5.3 
+
+          
+           BlockInstance
+           BlockInstance.position
+          rotStep = (rotStep + 1) % 4
+           BlockInstance
+           Simulating
+           EditAction
+           placedBlocks
+
+      -- 1  V1.0 --
+ · 1                                                             13
+
+
+
+6.1 
+
+        R1. 
+        R2. 
+        R3. 
+        R4.  0.5 
+        R5.  90° rotStep  0-3
+        R6. 
+
+6.2 
+
+        R7. 
+        R8. 
+    R9.  WaterInteraction
+         vx   0  broken 
+         /z  x 
+         
+         
+         
+        R10. 
+        R11. 
+
+6.3 
+
+        R12.   
+        R13.   floodThreshold
+    
+        R14.  consumedResource  frugalThreshold
+    R15. 
+         
+         
+
+                                                  -- 1  V1.0 --
+ · 1             14
+
+6.4 
+
+        R16. //
+        R17. 
+        R18. 
+        R19. 
+
+-- 1  V1.0 --
+ · 1           15
+
+   
+   
+   
+   
+   
+   
+   
+   
+ 
+ 
+
+-- 1  V1.0 --
+ · 1                                                                      16
+
+
+
+
+
+// 
+PuzzleRuntime InitLevel(string levelId)
+
+// 
+PlaceResult TryPlaceBlock(string blockId, Vector3 worldPos, int rotStep)
+
+// 
+MoveResult TryMoveBlock(string instanceId, Vector3 worldPos)
+
+// 
+RotateResult RotateBlock(string instanceId)
+
+// 
+RemoveResult RemoveBlock(string instanceId)
+
+// 
+SimulationResult StartSimulation()
+
+// /
+void PauseSimulation()
+void ResumeSimulation()
+
+// 
+PuzzleState GetState()
+
+// /
+bool Undo()
+void Reset()
+
+// 
+PuzzleResult GetResult()
+
+-- 1  V1.0 --
+ · 1           17
+
+//
+
+9.1 
+
+        
+        
+        
+        
+        ///
+
+9.2 
+
+        
+        
+         + 
+         + 
+
+9.3 UI 
+
+        
+        
+        //
+        ...
+
+-- 1  V1.0 --
+ · 1                                      18
+
+
+
+10.1               
+                   
+                   
+ BlockInstance     0=0°1=90°2=180°3=270°
+ WaterInteraction  
+ rotStep           
+ frugalThreshold   
+ PuzzleState
+ floodThreshold
+
+10.2 
+
+        
+        docs/game-system-breakdown.md
+        2
+        3
+
+                   -- 1  V1.0 --
+
