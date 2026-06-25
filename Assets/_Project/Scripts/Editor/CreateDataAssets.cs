@@ -7,19 +7,21 @@ public class CreateDataAssets
     [MenuItem("Dujiangyan/Setup L1 Data Assets")]
     public static void SetupL1DataAssets()
     {
-        CreateBlockConfigs();
-        CreateLevelConfigL1();
+        var blocks = CreateBlockConfigs();
+        LevelConfigSO level = CreateLevelConfigL1();
+        CreateBlockDatabase(blocks);
+        CreateLevelDatabase(level);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("[CreateDataAssets] L1 data assets created.");
     }
 
-    private static void CreateBlockConfigs()
+    private static BlockConfigSO[] CreateBlockConfigs()
     {
         string dir = "Assets/_Project/ScriptableObjects/Blocks";
         EnsureDirectory(dir);
 
-        CreateBlockConfig(
+        var bamboo = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Bamboo.asset",
             id: "bamboo",
             displayName: "竹笼",
@@ -28,7 +30,7 @@ public class CreateDataAssets
             cost: new ResourceCost { material = 2, labor = 1, time = 0 },
             interaction: WaterInteraction.Split);
 
-        CreateBlockConfig(
+        var maocha = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Maocha.asset",
             id: "maocha",
             displayName: "杩槎",
@@ -37,7 +39,7 @@ public class CreateDataAssets
             cost: new ResourceCost { material = 4, labor = 2, time = 0 },
             interaction: WaterInteraction.Split);
 
-        CreateBlockConfig(
+        var wall = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Wall.asset",
             id: "wall",
             displayName: "石墙",
@@ -45,9 +47,11 @@ public class CreateDataAssets
             maxHealth: 200f,
             cost: new ResourceCost { material = 10, labor = 5, time = 0 },
             interaction: WaterInteraction.Bounce);
+
+        return new[] { bamboo, maocha, wall };
     }
 
-    private static void CreateBlockConfig(string path, string id, string displayName, BlockType type, float maxHealth, ResourceCost cost, WaterInteraction interaction)
+    private static BlockConfigSO CreateBlockConfig(string path, string id, string displayName, BlockType type, float maxHealth, ResourceCost cost, WaterInteraction interaction)
     {
         AssetDatabase.DeleteAsset(path);
         var asset = ScriptableObject.CreateInstance<BlockConfigSO>();
@@ -58,9 +62,22 @@ public class CreateDataAssets
         asset.cost = cost;
         asset.interaction = interaction;
         AssetDatabase.CreateAsset(asset, path);
+        return asset;
     }
 
-    private static void CreateLevelConfigL1()
+    private static void CreateBlockDatabase(BlockConfigSO[] blocks)
+    {
+        string resourcesDir = "Assets/_Project/Resources";
+        EnsureDirectory(resourcesDir);
+        string path = $"{resourcesDir}/BlockDatabase.asset";
+        AssetDatabase.DeleteAsset(path);
+
+        var asset = ScriptableObject.CreateInstance<BlockDatabaseSO>();
+        asset.blocks = new System.Collections.Generic.List<BlockConfigSO>(blocks);
+        AssetDatabase.CreateAsset(asset, path);
+    }
+
+    private static LevelConfigSO CreateLevelConfigL1()
     {
         string dir = "Assets/_Project/ScriptableObjects/Levels";
         EnsureDirectory(dir);
@@ -108,6 +125,17 @@ public class CreateDataAssets
             wall = 0
         };
 
+        asset.preplacedBlocks = new[]
+        {
+            new PreplacedBlock
+            {
+                blockId = "wall",
+                position = new Vector3(0f, 0f, 2f),
+                rotStep = 1,
+                isIndestructible = true
+            }
+        };
+
         asset.hintTree = new[]
         {
             new HintNode
@@ -148,7 +176,21 @@ public class CreateDataAssets
         asset.hiddenGalleryUnlocks = new[] { "gallery_l1_frugal" };
 
         AssetDatabase.CreateAsset(asset, path);
+        return asset;
     }
+
+    private static void CreateLevelDatabase(LevelConfigSO level)
+    {
+        string resourcesDir = "Assets/_Project/Resources";
+        EnsureDirectory(resourcesDir);
+        string path = $"{resourcesDir}/LevelDatabase.asset";
+        AssetDatabase.DeleteAsset(path);
+
+        var asset = ScriptableObject.CreateInstance<LevelDatabaseSO>();
+        asset.levels = new System.Collections.Generic.List<LevelConfigSO> { level };
+        AssetDatabase.CreateAsset(asset, path);
+    }
+
 
     private static void EnsureDirectory(string path)
     {

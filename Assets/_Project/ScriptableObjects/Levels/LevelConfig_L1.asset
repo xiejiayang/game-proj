@@ -40,6 +40,11 @@ MonoBehaviour:
     center: {x: 4, y: 0, z: 2}
     size: {x: 3, y: 3}
     floodThreshold: 20
+  preplacedBlocks:
+  - blockId: wall
+    position: {x: 0, y: 0, z: 2}
+    rotStep: 1
+    isIndestructible: 1
   inventory:
     bamboo: 8
     maocha: 4

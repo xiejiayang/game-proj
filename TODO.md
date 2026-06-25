@@ -58,15 +58,15 @@
 
 | 编号 | 任务 | 优先级 | 状态 | 验收标准 | 关联规范 |
 |---|---|---|---|---|---|
-| M1.3.1 | 实现 `InputSystem`：统一封装鼠标/触摸输入 | P0 | 未开始 | 提供 `OnPointerDown/Move/Up` 事件；`IsTouchDevice` 属性；屏幕坐标输出 | ARCH §4.2 |
-| M1.3.2 | 实现 `PuzzleSystem` 核心状态机 | P0 | 未开始 | 状态：`Editing / Simulating / Settling / Paused`；事件：`OnEditingStarted`、`OnSimulationStarted`、`OnLevelSettled`；方法：`InitLevel`、`TryPlaceBlock`、`StartSimulation`、`Undo`、`Reset` | PRD §5.3、ARCH §4.2 |
-| M1.3.3 | 实现 `BlockPlacement`：网格吸附、旋转、撤销、重置 | P0 | 未开始 | 拖拽 ghost、网格吸附、90° 旋转、撤销栈、重置到初始布局；非法位置变红并回退 | PRD §5.1、ARCH §4.2 |
-| M1.3.4 | 实现 `WaterSimulation`：规则粒子水流 | P0 | 未开始 | 固定时间步长（如 0.02s）；L1 支持石墙反弹+耐久伤害、竹笼/杩槎按法线分流；村庄受击统计 | PRD §6.3、ARCH §6.2 |
-| M1.3.5 | 实现 `LevelResult`：成功/失败/节俭判定 | P0 | 未开始 | 失败原因：`Flood / Destroyed / Timeout`；节俭判定：`consumedResource <= frugalThreshold` | PRD §5.4、ARCH §3.5 |
-| M1.3.6 | 实现 `SaveSystem`（PlayerPrefs / localStorage） | P1 | 未开始 | 可读写 `PlayerProfile` 与 `PuzzleRuntime`；WebGL 下映射为 `localStorage` | PRD §3.2、ARCH §4.2 |
-| M1.3.7 | 实现 `AudioSystem`：音乐/音效分轨 | P1 | 未开始 | 方法：`PlayMusic`、`PlaySFX`、`SetMusicVolume`、`SetSFXVolume`；音量保存到 `PlayerProfile` | ARCH §4.2 |
-| M1.3.8 | 实现 `UIManager`：页面/弹窗栈管理 | P1 | 未开始 | `ShowScreen`、`HideScreen`、`ShowModal`、`ShowResult`；使用栈管理弹窗层级 | ARCH §4.2 |
-| M1.3.9 | 所有 MonoBehaviour 明确生命周期并在 `OnDestroy` 中取消事件订阅 | P1 | 未开始 | 无内存泄漏警告；无运行时 MissingReferenceException | ARCH §4.3、§6.2 |
+| M1.3.1 | 实现 `InputSystem`：统一封装鼠标/触摸输入 | P0 | 已完成 | 提供 `OnPointerDown/Move/Up` 事件；`IsTouchDevice` 属性；屏幕坐标输出 | ARCH §4.2 |
+| M1.3.2 | 实现 `PuzzleSystem` 核心状态机 | P0 | 已完成 | 状态：`Editing / Simulating / Settling / Paused`；事件完整；方法包含 `InitLevel`、`TryPlaceBlock`、`TryMoveBlock`、`RotateBlock`、`RemoveBlock`、`StartSimulation`、`Pause/Resume`、`Undo`、`Reset` | PRD §5.3、ARCH §4.2 |
+| M1.3.3 | 实现 `BlockPlacement`：网格吸附、旋转、撤销、重置 | P0 | 已完成 | 订阅 InputSystem 实现拖拽 ghost、网格吸附、90° 旋转；与 PuzzleSystem 事件同步视觉；非法位置变红 | PRD §5.1、ARCH §4.2 |
+| M1.3.4 | 实现 `WaterSimulation`：规则粒子水流 | P0 | 已完成 | 固定时间步长；石墙反弹+耐久伤害、竹笼/杩槎法线分流；村庄矩形区域受击统计 | PRD §6.3、ARCH §6.2 |
+| M1.3.5 | 实现 `LevelResult`：成功/失败/节俭判定 | P0 | 已完成 | 失败原因：`Flood / Destroyed / Timeout`；节俭判定：`consumedResource <= frugalThreshold`；自动解锁对应碑廊 | PRD §5.4、ARCH §3.5 |
+| M1.3.6 | 实现 `SaveSystem`（PlayerPrefs / localStorage） | P1 | 已完成 | 可读写 `PlayerProfile` 与 `PuzzleRuntime`；使用 JsonUtility + PlayerPrefs | PRD §3.2、ARCH §4.2 |
+| M1.3.7 | 实现 `AudioSystem`：音乐/音效分轨 | P1 | 已完成 | 双 AudioSource 分轨；`PlayMusic`/`PlaySFX`/`SetMusicVolume`/`SetSFXVolume`；音量自动保存到 `PlayerProfile` | ARCH §4.2 |
+| M1.3.8 | 实现 `UIManager`：页面/弹窗栈管理 | P1 | 已完成 | `ShowScreen`/`HideScreen`/`ShowModal`/`ShowResult`；注册表 + 栈管理弹窗层级 | ARCH §4.2 |
+| M1.3.9 | 所有 MonoBehaviour 明确生命周期并在 `OnDestroy` 中取消事件订阅 | P1 | 已完成 | 订阅事件的服务在 `OnDisable`/`OnDestroy` 中取消订阅；单例在销毁时清空引用 | ARCH §4.3、§6.2 |
 
 ### M1.4 灰盒场景与基础交互
 
