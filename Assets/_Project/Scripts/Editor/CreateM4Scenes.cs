@@ -13,6 +13,7 @@ public class CreateM4Scenes
     {
         CreateTitleScene();
         CreateIntroScene();
+        CreateLoadingScene();
         UpdateBuildSettings();
     }
 
@@ -27,6 +28,7 @@ public class CreateM4Scenes
 
         var canvasGO = CreateCanvas(scene);
         CreatePaperNoiseOverlay(canvasGO.transform);
+        CreateSceneFader(canvasGO.transform);
 
         var bg = CreatePanel(canvasGO.transform, "Background", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.1f, 0.1f, 0.1f, 0.2f));
         var bgImage = bg.GetComponent<Image>();
@@ -71,6 +73,7 @@ public class CreateM4Scenes
 
         var canvasGO = CreateCanvas(scene);
         CreatePaperNoiseOverlay(canvasGO.transform);
+        CreateSceneFader(canvasGO.transform);
 
         var image = CreateRawImage(canvasGO.transform, "NarrativeImage", "Assets/_Project/Art/AI_Generated/Narrative/L1_Intro_Narrative.png");
 
@@ -113,12 +116,48 @@ public class CreateM4Scenes
         Debug.Log($"[CreateM4Scenes] Saved intro scene to {scenePath}");
     }
 
+    private static void CreateLoadingScene()
+    {
+        string scenePath = "Assets/_Project/Scenes/Loading.unity";
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        var camera = new GameObject("Main Camera");
+        camera.tag = "MainCamera";
+        camera.AddComponent<Camera>().backgroundColor = new Color(0.969f, 0.953f, 0.914f);
+
+        var canvasGO = CreateCanvas(scene);
+        CreatePaperNoiseOverlay(canvasGO.transform);
+
+        var title = CreateText(canvasGO.transform, "Hint", "研墨中…", new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f),
+            new Vector2(-120, -20), new Vector2(120, 20), 28, TextAlignmentOptions.Center);
+        title.color = new Color(0.1f, 0.1f, 0.1f, 1f);
+
+        var barBg = CreatePanel(canvasGO.transform, "BarBg", new Vector2(0.5f, 0.45f), new Vector2(0.5f, 0.45f),
+            new Vector2(-150, -8), new Vector2(150, 8), new Color(0.8f, 0.78f, 0.72f, 1f));
+        var fillGO = CreatePanel(barBg.transform, "BarFill", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            Vector2.zero, Vector2.zero, new Color(0.18f, 0.35f, 0.29f, 1f));
+        var fillRect = fillGO.GetComponent<RectTransform>();
+        fillRect.anchorMax = new Vector2(0, 1);
+        var fillImage = fillGO.GetComponent<Image>();
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Horizontal;
+        fillImage.fillOrigin = 0;
+        fillImage.fillAmount = 0f;
+
+        var loadingUI = camera.AddComponent<LoadingUI>();
+        loadingUI.SetBar(fillImage);
+
+        EditorSceneManager.SaveScene(scene, scenePath);
+        Debug.Log($"[CreateM4Scenes] Saved loading scene to {scenePath}");
+    }
+
     private static void UpdateBuildSettings()
     {
         var scenes = new EditorBuildSettingsScene[]
         {
             new EditorBuildSettingsScene("Assets/_Project/Scenes/Title.unity", true),
             new EditorBuildSettingsScene("Assets/_Project/Scenes/Intro_L1.unity", true),
+            new EditorBuildSettingsScene("Assets/_Project/Scenes/Loading.unity", true),
             new EditorBuildSettingsScene("Assets/_Project/Scenes/Level_L1.unity", true)
         };
         EditorBuildSettings.scenes = scenes;
@@ -132,7 +171,30 @@ public class CreateM4Scenes
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         go.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         go.AddComponent<GraphicRaycaster>();
+        go.AddComponent<Dujiangyan.UI.SafeAreaFitter>();
         return go;
+    }
+
+    private static void CreateSceneFader(Transform root)
+    {
+        var go = new GameObject("SceneFader");
+        if (root != null)
+            go.transform.SetParent(root, false);
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 999;
+        var scaler = go.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        var image = go.AddComponent<Image>();
+        image.color = new Color(0.969f, 0.953f, 0.914f, 1f);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        var cg = go.AddComponent<CanvasGroup>();
+        cg.alpha = 1f;
+        go.AddComponent<Dujiangyan.UI.SceneFader>();
     }
 
     private static void CreatePaperNoiseOverlay(Transform canvas)

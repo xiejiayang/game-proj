@@ -26,7 +26,10 @@ namespace Dujiangyan.UI
 
         private void StartGame()
         {
-            SceneManager.LoadScene("Intro_L1");
+            if (SceneFader.Instance != null)
+                SceneFader.Instance.LoadScene("Intro_L1");
+            else
+                SceneManager.LoadScene("Intro_L1");
         }
 
         private void OnDestroy()

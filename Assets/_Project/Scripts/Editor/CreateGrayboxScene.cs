@@ -109,9 +109,13 @@ public class CreateGrayboxScene
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         canvasGO.AddComponent<GraphicRaycaster>();
+        canvasGO.AddComponent<Dujiangyan.UI.SafeAreaFitter>();
 
         // Paper noise overlay (DESIGN §2.3: 6% background texture)
         CreatePaperNoiseOverlay(canvasGO.transform);
+
+        // Scene fader
+        CreateSceneFader(canvasGO.transform.parent);
 
         var levelUI = canvasGO.AddComponent<LevelUI>();
 
@@ -612,6 +616,27 @@ public class CreateGrayboxScene
         RenderSettings.fogColor = fogColor;
         RenderSettings.fogStartDistance = 12f;
         RenderSettings.fogEndDistance = 32f;
+    }
+
+    private static void CreateSceneFader(Transform root)
+    {
+        var go = new GameObject("SceneFader");
+        go.transform.SetParent(root, false);
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 999;
+        var scaler = go.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        var image = go.AddComponent<Image>();
+        image.color = new Color(0.969f, 0.953f, 0.914f, 1f);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        var cg = go.AddComponent<CanvasGroup>();
+        cg.alpha = 1f;
+        go.AddComponent<Dujiangyan.UI.SceneFader>();
     }
 
     private static void CreatePaperNoiseOverlay(Transform canvas)

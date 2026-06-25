@@ -34,7 +34,10 @@ namespace Dujiangyan.UI
 
         private void EnterLevel()
         {
-            SceneManager.LoadScene("Level_L1");
+            if (SceneFader.Instance != null)
+                SceneFader.Instance.LoadScene("Loading");
+            else
+                SceneManager.LoadScene("Loading");
         }
 
         private void OnDestroy()

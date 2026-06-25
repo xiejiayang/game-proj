@@ -40,6 +40,23 @@ namespace Dujiangyan.UI
                 hintPill?.Show("没有可撤销的操作", 2f);
         }
 
+        private void OnEnable()
+        {
+            if (SaveSystem.Instance != null)
+                SaveSystem.Instance.OnSaveFailed += OnSaveFailed;
+        }
+
+        private void OnDisable()
+        {
+            if (SaveSystem.Instance != null)
+                SaveSystem.Instance.OnSaveFailed -= OnSaveFailed;
+        }
+
+        private void OnSaveFailed(string message)
+        {
+            hintPill?.Show(message, 4f);
+        }
+
         public void ResetLevel()
         {
             PuzzleSystem.Instance?.Reset();
