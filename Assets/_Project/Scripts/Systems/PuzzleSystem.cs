@@ -34,6 +34,7 @@ namespace Dujiangyan.Systems
 
         public PuzzleRuntime Runtime => runtime;
         public LevelConfigSO CurrentConfig => currentConfig;
+        public int PreplacedBlockCount => preplacedBlockCount;
 
         private void Awake()
         {
