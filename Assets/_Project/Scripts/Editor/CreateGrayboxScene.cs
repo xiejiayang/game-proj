@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using TMPro;
 using Dujiangyan.Core;
 using Dujiangyan.Systems;
@@ -16,10 +18,17 @@ public class CreateGrayboxScene
         string scenePath = "Assets/_Project/Scenes/Level_L1.unity";
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        var grayMat = CreateMaterial("Graybox_Ground", new Color(0.75f, 0.72f, 0.68f));
-        var waterMat = CreateMaterial("Graybox_Water", new Color(0.2f, 0.45f, 0.75f));
-        var villageMat = CreateMaterial("Graybox_Village", new Color(0.8f, 0.3f, 0.3f, 0.4f));
-        villageMat.SetFloat("_Surface", 1);
+        // 水墨淡彩配色（DESIGN §2）
+        var paper = new Color(0.969f, 0.953f, 0.914f); // #f7f3e9
+        var paperDark = new Color(0.910f, 0.878f, 0.816f); // #e8e0d0
+        var inkMid = new Color(0.290f, 0.290f, 0.290f); // #4a4a4a
+        var waterColor = new Color(0.227f, 0.353f, 0.416f, 0.75f); // #3a5a6a
+        var dangerColor = new Color(0.545f, 0.227f, 0.227f, 0.35f); // #8b3a3a
+
+        var grayMat = CreateMaterial("InkPaper_Ground", paperDark);
+        var waterMat = CreateMaterial("InkWater_Source", waterColor);
+        var villageMat = CreateMaterial("InkWater_Village", dangerColor);
+        var waterSurfaceMat = CreateMaterial("InkWater_Surface", waterColor);
 
         // Ground
         var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -35,9 +44,14 @@ public class CreateGrayboxScene
         camera.transform.rotation = Quaternion.Euler(55f, 0f, 0f);
         var cam = camera.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.9f, 0.88f, 0.82f);
+        cam.backgroundColor = paper;
         cam.orthographic = true;
         cam.orthographicSize = 9f;
+        var cameraData = cam.GetUniversalAdditionalCameraData();
+        cameraData.renderPostProcessing = true;
+
+        // Global Volume (post-processing)
+        CreateGlobalVolume(paperDark, inkMid);
 
         // Light
         var lightGO = new GameObject("Directional Light");
@@ -46,11 +60,19 @@ public class CreateGrayboxScene
         light.type = LightType.Directional;
         light.intensity = 1.2f;
 
+        // Water surface (river)
+        var waterPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        waterPlane.name = "WaterSurface";
+        waterPlane.transform.position = new Vector3(7.5f, 0.005f, 5.5f);
+        waterPlane.transform.localScale = new Vector3(1.6f, 1f, 1.2f);
+        waterPlane.GetComponent<Renderer>().sharedMaterial = waterSurfaceMat;
+        Object.DestroyImmediate(waterPlane.GetComponent<Collider>());
+
         // Water source marker
         var waterMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         waterMarker.name = "WaterSource";
-        waterMarker.transform.position = new Vector3(-6f, 0.5f, 2f);
-        waterMarker.transform.localScale = Vector3.one * 0.5f;
+        waterMarker.transform.position = new Vector3(-6f, 0.55f, 2f);
+        waterMarker.transform.localScale = Vector3.one * 0.4f;
         waterMarker.GetComponent<Renderer>().sharedMaterial = waterMat;
         Object.DestroyImmediate(waterMarker.GetComponent<Collider>());
 
@@ -465,6 +487,34 @@ public class CreateGrayboxScene
         slider.direction = Slider.Direction.LeftToRight;
 
         return go;
+    }
+
+    private static void CreateGlobalVolume(Color vignetteColor, Color fogColor)
+    {
+        string profilePath = "Assets/_Project/Settings/VolumeProfile_L1.asset";
+        AssetDatabase.DeleteAsset(profilePath);
+
+        var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+        profile.name = "VolumeProfile_L1";
+
+        var colorAdjustments = profile.Add<ColorAdjustments>();
+        colorAdjustments.saturation.Override(-25f);
+        colorAdjustments.contrast.Override(10f);
+
+        var vignette = profile.Add<Vignette>();
+        vignette.intensity.Override(0.25f);
+        vignette.color.Override(vignetteColor);
+        vignette.smoothness.Override(0.4f);
+
+        var tonemapping = profile.Add<Tonemapping>();
+        tonemapping.mode.Override(TonemappingMode.Neutral);
+
+        AssetDatabase.CreateAsset(profile, profilePath);
+
+        var volumeGO = new GameObject("Global Volume");
+        var volume = volumeGO.AddComponent<Volume>();
+        volume.isGlobal = true;
+        volume.profile = profile;
     }
 
     private static void SetField(object target, string fieldName, object value)
