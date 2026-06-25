@@ -160,7 +160,9 @@ public class CreateGrayboxScene
         resultCG.blocksRaycasts = false;
 
         var screen1 = CreatePanel(resultGO.transform, "Screen1", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.97f, 0.95f, 0.91f, 1f));
+        screen1.AddComponent<CanvasGroup>();
         var screen2 = CreatePanel(resultGO.transform, "Screen2", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.97f, 0.95f, 0.91f, 1f));
+        screen2.AddComponent<CanvasGroup>();
         screen2.SetActive(false);
 
         var seal = CreateText(screen1.transform, "Seal", "安", new Vector2(0.5f, 0.75f), new Vector2(0.5f, 0.75f),
