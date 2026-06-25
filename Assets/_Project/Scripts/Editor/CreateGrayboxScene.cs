@@ -39,6 +39,9 @@ public class CreateGrayboxScene
         ground.transform.localScale = new Vector3(16f, 0.1f, 12f);
         ground.GetComponent<Renderer>().sharedMaterial = grayMat;
 
+        // Low-poly ink-wash decorations
+        CreateDecorations(ground.transform.parent);
+
         // Camera
         var camera = new GameObject("Main Camera");
         camera.tag = "MainCamera";
@@ -509,6 +512,81 @@ public class CreateGrayboxScene
         slider.direction = Slider.Direction.LeftToRight;
 
         return go;
+    }
+
+    private static void CreateDecorations(Transform root)
+    {
+        Shader inkShader = Shader.Find("Dujiangyan/InkWash");
+        if (inkShader == null) return;
+
+        var rockMat = CreateMaterial("InkDecoration_Rock", inkShader, new Color(0.65f, 0.62f, 0.58f), new Color(0.1f, 0.1f, 0.1f));
+        var treeMat = CreateMaterial("InkDecoration_Tree", inkShader, new Color(0.35f, 0.45f, 0.38f), new Color(0.08f, 0.12f, 0.1f));
+        var woodMat = CreateMaterial("InkDecoration_Wood", inkShader, new Color(0.65f, 0.55f, 0.45f), new Color(0.12f, 0.08f, 0.06f));
+
+        string modelDir = "Assets/_Project/Art/Models/Kenney_NatureKit";
+
+        // River banks: left and right of the central channel (z ≈ 0..4)
+        for (int x = -6; x <= 8; x += 1)
+        {
+            PlacePrefab($"{modelDir}/cliff_block_stone.fbx", new Vector3(x, 0.45f, -0.5f), Vector3.zero, Vector3.one * 0.9f, rockMat, root);
+            PlacePrefab($"{modelDir}/cliff_block_stone.fbx", new Vector3(x, 0.45f, 4.5f), new Vector3(0, 180f, 0), Vector3.one * 0.9f, rockMat, root);
+        }
+
+        // Distant mountains along the far edges
+        for (int z = -4; z <= 10; z += 2)
+        {
+            PlacePrefab($"{modelDir}/cliff_large_stone.fbx", new Vector3(-8f, 1.0f, z), new Vector3(0, 90f, 0), Vector3.one * 1.4f, rockMat, root);
+            PlacePrefab($"{modelDir}/cliff_large_stone.fbx", new Vector3(17f, 1.0f, z), new Vector3(0, -90f, 0), Vector3.one * 1.4f, rockMat, root);
+        }
+        for (int x = -6; x <= 14; x += 2)
+        {
+            PlacePrefab($"{modelDir}/cliff_large_stone.fbx", new Vector3(x, 1.0f, -5f), Vector3.zero, Vector3.one * 1.4f, rockMat, root);
+            PlacePrefab($"{modelDir}/cliff_large_stone.fbx", new Vector3(x, 1.0f, 13f), new Vector3(0, 180f, 0), Vector3.one * 1.4f, rockMat, root);
+        }
+
+        // Trees scattered on banks and background
+        string[] treePaths = {
+            $"{modelDir}/tree_pineTallA.fbx",
+            $"{modelDir}/tree_pineRoundA.fbx",
+            $"{modelDir}/tree_oak.fbx",
+            $"{modelDir}/tree_pineSmallA.fbx"
+        };
+        System.Random rng = new System.Random(42);
+        for (int i = 0; i < 24; i++)
+        {
+            float x = -7f + (float)(rng.NextDouble() * 22f);
+            float z = -4f + (float)(rng.NextDouble() * 14f);
+            // Avoid the central river channel
+            if (z > 0f && z < 4f) continue;
+            string path = treePaths[rng.Next(treePaths.Length)];
+            float scale = 0.5f + (float)(rng.NextDouble() * 0.5f);
+            float rot = (float)(rng.NextDouble() * 360f);
+            PlacePrefab(path, new Vector3(x, 0.2f, z), new Vector3(0, rot, 0), Vector3.one * scale, treeMat, root);
+        }
+
+        // Village tents near the village area (4, 2)
+        PlacePrefab($"{modelDir}/tent_detailedClosed.fbx", new Vector3(3.0f, 0.05f, 1.0f), new Vector3(0, -30f, 0), Vector3.one * 0.8f, woodMat, root);
+        PlacePrefab($"{modelDir}/tent_smallClosed.fbx", new Vector3(4.5f, 0.05f, 2.5f), new Vector3(0, 60f, 0), Vector3.one * 0.8f, woodMat, root);
+        PlacePrefab($"{modelDir}/tent_detailedClosed.fbx", new Vector3(5.0f, 0.05f, 0.5f), new Vector3(0, 120f, 0), Vector3.one * 0.75f, woodMat, root);
+    }
+
+    private static void PlacePrefab(string assetPath, Vector3 position, Vector3 rotation, Vector3 scale, Material material, Transform parent)
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[CreateGrayboxScene] Missing prefab: {assetPath}");
+            return;
+        }
+
+        GameObject go = Object.Instantiate(prefab, parent);
+        go.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+        go.transform.position = position;
+        go.transform.rotation = Quaternion.Euler(rotation);
+        go.transform.localScale = scale;
+
+        foreach (var rend in go.GetComponentsInChildren<Renderer>())
+            rend.sharedMaterial = material;
     }
 
     private static void CreateGlobalVolume(Color vignetteColor, Color fogColor)
