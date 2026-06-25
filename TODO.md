@@ -72,12 +72,12 @@
 
 | 编号 | 任务 | 优先级 | 状态 | 验收标准 | 关联规范 |
 |---|---|---|---|---|---|
-| M1.4.1 | 搭建 L1 灰盒场景 `Level_L1.unity` | P0 | 未开始 | 包含：地形、水源、河道中央预置石墙、村庄区域、竹笼/杩槎库存点；使用简单立方体/白模占位 | PRD §5.1、ARCH §2 |
-| M1.4.2 | 实现水源发射器与粒子池 | P1 | 未开始 | 粒子数量可控；活跃粒子 ≤ 200；水源位置、发射速率可配置 | PRD §6.3 |
-| M1.4.3 | 实现村庄受击检测与统计 | P1 | 未开始 | 村庄区域 Collider 正确统计进入粒子数；达到阈值触发 `Flood` 失败 | PRD §5.4 |
-| M1.4.4 | 实现「放水」按钮进入模拟阶段 | P1 | 未开始 | 点击后从 Editing 进入 Simulating；Toolbar 禁用、网格隐藏 | PRD §5.1、DESIGN §6.4 |
-| M1.4.5 | 实现模拟结束自动进入结算 | P1 | 未开始 | 满足时间或失败条件后进入 Settling | PRD §5.3 |
-| M1.4.6 | 实现重试/重置保留提示触发计数 | P2 | 未开始 | 失败重试后保留失败次数，用于提示触发 | PRD §5.1 |
+| M1.4.1 | 搭建 L1 灰盒场景 `Level_L1.unity` | P0 | 已完成 | 已创建 `Assets/_Project/Scenes/Level_L1.unity`：地面、主摄像机、方向光、水源标记、村庄触发区、Services、Canvas UI、LevelBootstrap | PRD §5.1、ARCH §2 |
+| M1.4.2 | 实现水源发射器与粒子池 | P1 | 已完成 | `WaterSimulation` 维护粒子列表与视觉对象池，`maxParticles=200`，参数由 `WaterSourceConfig` 配置 | PRD §6.3 |
+| M1.4.3 | 实现村庄受击检测与统计 | P1 | 已完成 | 村庄区域配置 `VillageConfig`，场景中有触发 Collider；`WaterSimulation` 按矩形区域统计受击并触发 `Flood` | PRD §5.4 |
+| M1.4.4 | 实现「放水」按钮进入模拟阶段 | P1 | 已完成 | Canvas 提供「放水」按钮调用 `PuzzleSystem.StartSimulation()`；工具栏选择/旋转/重置按钮已就位 | PRD §5.1、DESIGN §6.4 |
+| M1.4.5 | 实现模拟结束自动进入结算 | P1 | 已完成 | `PuzzleSystem.Update` 按固定步长驱动模拟，满足成功/失败条件后自动 `Settle` 并触发 `OnLevelSettled` | PRD §5.3 |
+| M1.4.6 | 实现重试/重置保留提示触发计数 | P2 | 已完成 | `PlayerProfile` 新增 `LevelFailureCount` 列表；`PuzzleSystem.Settle` 在失败时累加并保存，`Reset` 不清除 | PRD §5.1 |
 
 ---
 

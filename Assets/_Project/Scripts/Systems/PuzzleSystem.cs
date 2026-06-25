@@ -427,6 +427,29 @@ namespace Dujiangyan.Systems
             runtime.state = PuzzleState.Settling;
             runtime.result = result;
             WaterSimulation.Instance.Clear();
+
+            if (SaveSystem.Instance != null)
+            {
+                var profile = SaveSystem.Instance.LoadProfile();
+                if (result.isSuccess)
+                {
+                    if (!profile.unlockedLevels.Contains(runtime.levelId))
+                        profile.unlockedLevels.Add(runtime.levelId);
+
+                    foreach (var entry in result.unlockedGallery)
+                    {
+                        if (!profile.unlockedGallery.Contains(entry))
+                            profile.unlockedGallery.Add(entry);
+                    }
+                }
+                else
+                {
+                    int fails = profile.GetFailureCount(runtime.levelId) + 1;
+                    profile.SetFailureCount(runtime.levelId, fails);
+                }
+                SaveSystem.Instance.SaveProfile(profile);
+            }
+
             OnLevelSettled?.Invoke(result);
         }
 

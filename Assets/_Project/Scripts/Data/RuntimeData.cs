@@ -317,6 +317,16 @@ namespace Dujiangyan.Data
     }
 
     /// <summary>
+    /// 关卡失败次数记录（用于提示触发）
+    /// </summary>
+    [Serializable]
+    public struct LevelFailureCount
+    {
+        public string levelId;
+        public int count;
+    }
+
+    /// <summary>
     /// 玩家档案（持久化）
     /// </summary>
     [Serializable]
@@ -325,18 +335,47 @@ namespace Dujiangyan.Data
         public string lastPlayedLevelId;
         public List<string> unlockedLevels;
         public List<string> unlockedGallery;
+        public List<LevelFailureCount> levelFailureCounts;
         public GameSettings settings;
 
         public PlayerProfile()
         {
             unlockedLevels = new List<string>();
             unlockedGallery = new List<string>();
+            levelFailureCounts = new List<LevelFailureCount>();
             settings = new GameSettings
             {
                 musicVolume = 0.7f,
                 sfxVolume = 0.7f,
                 languageIndex = 0
             };
+        }
+
+        public int GetFailureCount(string levelId)
+        {
+            if (levelFailureCounts == null) return 0;
+            foreach (var item in levelFailureCounts)
+            {
+                if (item.levelId == levelId)
+                    return item.count;
+            }
+            return 0;
+        }
+
+        public void SetFailureCount(string levelId, int count)
+        {
+            if (levelFailureCounts == null)
+                levelFailureCounts = new List<LevelFailureCount>();
+
+            for (int i = 0; i < levelFailureCounts.Count; i++)
+            {
+                if (levelFailureCounts[i].levelId == levelId)
+                {
+                    levelFailureCounts[i] = new LevelFailureCount { levelId = levelId, count = count };
+                    return;
+                }
+            }
+            levelFailureCounts.Add(new LevelFailureCount { levelId = levelId, count = count });
         }
     }
 }
