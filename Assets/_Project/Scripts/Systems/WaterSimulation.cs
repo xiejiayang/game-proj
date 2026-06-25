@@ -129,8 +129,9 @@ namespace Dujiangyan.Systems
 
                 if (!block.isIndestructible)
                 {
+                    float prevHealth = block.health;
                     block.health -= BounceDamage;
-                    if (block.health <= 0f)
+                    if (prevHealth > 0f && block.health <= 0f)
                         OnBlockDestroyed?.Invoke(block);
                 }
             }

@@ -54,6 +54,9 @@ namespace Dujiangyan.Systems
                 PuzzleSystem.Instance.OnBlockRotated += OnBlockRotated;
                 PuzzleSystem.Instance.OnEditingStarted += OnEditingStarted;
             }
+
+            if (WaterSimulation.Instance != null)
+                WaterSimulation.Instance.OnBlockDestroyed += OnBlockDestroyed;
         }
 
         private void OnDisable()
@@ -72,6 +75,9 @@ namespace Dujiangyan.Systems
                 PuzzleSystem.Instance.OnBlockRotated -= OnBlockRotated;
                 PuzzleSystem.Instance.OnEditingStarted -= OnEditingStarted;
             }
+
+            if (WaterSimulation.Instance != null)
+                WaterSimulation.Instance.OnBlockDestroyed -= OnBlockDestroyed;
         }
 
         public void SelectBlock(string blockId)
@@ -272,6 +278,37 @@ namespace Dujiangyan.Systems
                 Destroy(visual);
                 placedVisuals.Remove(instance.instanceId);
             }
+        }
+
+        private void OnBlockDestroyed(BlockInstance instance)
+        {
+            if (placedVisuals.TryGetValue(instance.instanceId, out GameObject visual))
+            {
+                placedVisuals.Remove(instance.instanceId);
+                StartCoroutine(FadeOutVisual(visual, 0.3f));
+            }
+        }
+
+        private IEnumerator FadeOutVisual(GameObject visual, float duration)
+        {
+            var renderers = visual.GetComponentsInChildren<MeshRenderer>();
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float alpha = 1f - Mathf.Clamp01(t / duration);
+                foreach (var rend in renderers)
+                {
+                    if (rend.material.HasProperty("_Color"))
+                    {
+                        Color c = rend.material.color;
+                        c.a = alpha;
+                        rend.material.color = c;
+                    }
+                }
+                yield return null;
+            }
+            Destroy(visual);
         }
 
         private void OnBlockRotated(BlockInstance instance)
