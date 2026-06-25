@@ -33,15 +33,13 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Large binary assets (use LFS or CDN)
-*.psd
-*.tga
-*.png
-*.jpg
-*.jpeg
-*.mp4
-*.wav
-*.mp3
-*.fbx
-*.obj
-*.blend
+# Build outputs
+*.apk
+*.aab
+*.exe
+*.app
+*.ipa
+*.unitypackage
+
+# Binary assets are tracked via Git LFS (see .gitattributes).
+# Large runtime-downloadable assets should go to CDN and be excluded here.
