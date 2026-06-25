@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -116,19 +117,48 @@ namespace Dujiangyan.Systems
         {
             if (ghost == null) return;
 
-            Vector3 pos = ghost.transform.position;
-            bool valid = IsValidPlacement(pos);
+            // 释放到 UI 上或离开地面视为取消
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                StartCoroutine(CancelPlacementFeedback(ghost));
+                ghost = null;
+                ghostRenderer = null;
+                ClearSelection();
+                return;
+            }
+
+            if (!TryGetGroundPosition(screenPos, out Vector3 worldPos))
+            {
+                StartCoroutine(CancelPlacementFeedback(ghost));
+                ghost = null;
+                ghostRenderer = null;
+                ClearSelection();
+                return;
+            }
+
+            Vector3 snapped = GridUtility.SnapToGrid(worldPos, PuzzleSystem.Instance.CurrentConfig.terrain, 0f);
+            if (!IsValidPlacement(snapped))
+            {
+                StartCoroutine(CancelPlacementFeedback(ghost));
+                ghost = null;
+                ghostRenderer = null;
+                ClearSelection();
+                return;
+            }
+
             Destroy(ghost);
             ghost = null;
             ghostRenderer = null;
 
-            if (valid)
-            {
-                var result = PuzzleSystem.Instance.TryPlaceBlock(selectedBlockId, pos, pendingRotation);
-                if (!result.success)
-                    Debug.LogWarning($"[BlockPlacement] Place failed: {result.errorMessage}");
-            }
+            var result = PuzzleSystem.Instance.TryPlaceBlock(selectedBlockId, snapped, pendingRotation);
+            if (!result.success)
+                Debug.LogWarning($"[BlockPlacement] Place failed: {result.errorMessage}");
 
+            ClearSelection();
+        }
+
+        private void ClearSelection()
+        {
             selectedBlockId = null;
             pendingRotation = 0;
         }
@@ -198,6 +228,41 @@ namespace Dujiangyan.Systems
             visual.transform.position = instance.position;
             visual.transform.rotation = Quaternion.Euler(0, instance.rotStep * 90f, 0);
             placedVisuals[instance.instanceId] = visual;
+            StartCoroutine(AnimatePlace(visual));
+        }
+
+        private IEnumerator AnimatePlace(GameObject visual)
+        {
+            Vector3 targetScale = visual.transform.localScale;
+            visual.transform.localScale = Vector3.zero;
+            float t = 0f;
+            while (t < 0.15f)
+            {
+                t += Time.deltaTime;
+                float p = Mathf.Clamp01(t / 0.15f);
+                visual.transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, p);
+                yield return null;
+            }
+            visual.transform.localScale = targetScale;
+        }
+
+        private IEnumerator CancelPlacementFeedback(GameObject go)
+        {
+            if (go == null) yield break;
+            var rend = go.GetComponent<MeshRenderer>();
+            if (rend != null)
+                rend.material.color = new Color(0.8f, 0.2f, 0.2f, 1f);
+
+            Vector3 startScale = go.transform.localScale;
+            float t = 0f;
+            while (t < 0.2f)
+            {
+                t += Time.deltaTime;
+                float p = t / 0.2f;
+                go.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, p);
+                yield return null;
+            }
+            Destroy(go);
         }
 
         private void OnBlockRemoved(BlockInstance instance)

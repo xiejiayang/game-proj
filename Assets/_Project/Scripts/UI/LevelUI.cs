@@ -33,6 +33,13 @@ namespace Dujiangyan.UI
             puzzle.StartSimulation();
         }
 
+        public void Undo()
+        {
+            bool undone = PuzzleSystem.Instance?.Undo() ?? false;
+            if (!undone)
+                hintPill?.Show("没有可撤销的操作", 2f);
+        }
+
         public void ResetLevel()
         {
             PuzzleSystem.Instance?.Reset();

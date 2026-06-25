@@ -124,6 +124,11 @@ public class CreateGrayboxScene
         // Pause button
         var pauseBtn = CreateButton(canvasGO.transform, "暂停", new Vector2(40, 40), levelUI.TogglePause);
 
+        // Action buttons
+        var simulateBtn = CreateButton(canvasGO.transform, "放水", new Vector2(200, 40), levelUI.StartSimulation);
+        var undoBtn = CreateButton(canvasGO.transform, "撤销", new Vector2(320, 40), levelUI.Undo);
+        var resetBtn = CreateButton(canvasGO.transform, "重置", new Vector2(440, 40), levelUI.ResetLevel);
+
         // Status text
         var statusText = CreateText(canvasGO.transform, "StatusText", "编辑阶段",
             new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-100, -120), new Vector2(100, -90), 20, TextAlignmentOptions.Center);
