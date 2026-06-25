@@ -41,7 +41,7 @@
 | M1.1.2 | 搭建 `Assets/_Project/` 完整目录结构（Scripts、Scenes、Prefabs、Art、Audio、ScriptableObjects、Resources、StreamingAssets） | P0 | 已完成 | 目录与 `ARCHITECTURE.md` §2 完全一致，空目录放置 `.gitkeep` | ARCH §2 |
 | M1.1.3 | 配置 Git + .gitignore，确定版本控制策略 | P1 | 已完成 | `.gitignore` 包含 Library、Temp、Obj、Builds；大文件走 LFS 或 CDN | ARCH §1.2 |
 | M1.1.4 | 导入基础 Asset Store 包（低多边形山水/村庄/建筑包）并确认商用授权 | P1 | 已完成 | 授权记录保存于 `docs/licenses.md`；资源仅用于 `_Project` 外部引用或已整理到 `_Project/Art/Models/` | PRD §6.7、ARCH §1.3 |
-| M1.1.5 | 导入 Noto Serif SC / Source Han Serif SC 字体并配置 SDF | P1 | 未开始 | 字体文件位于 `Assets/_Project/Art/UI/Fonts/`，材质使用 SDF | DESIGN §3、ARCH §1.3 |
+| M1.1.5 | 导入 Noto Serif SC / Source Han Serif SC 字体并配置 SDF | P1 | 已完成 | 字体文件位于 `Assets/_Project/Art/UI/Fonts/`，SDF 资产 `NotoSerifSC-Regular_SDF.asset` 已生成并设为 TMP 默认字体；含 FontTest 校验场景 | DESIGN §3、ARCH §1.3 |
 
 ### M1.2 数据原型与配置
 
