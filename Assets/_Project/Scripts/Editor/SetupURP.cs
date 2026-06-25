@@ -10,6 +10,7 @@ public static class SetupURP
         const string projectFolder = "Assets/_Project";
         const string settingsFolder = projectFolder + "/Settings";
         const string assetPath = settingsFolder + "/URP_L1.asset";
+        const string rendererPath = settingsFolder + "/URP_L1_Renderer.asset";
 
         if (!AssetDatabase.IsValidFolder(projectFolder))
         {
@@ -20,13 +21,23 @@ public static class SetupURP
             AssetDatabase.CreateFolder(projectFolder, "Settings");
         }
 
-        var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(assetPath);
-        if (asset == null)
+        // Remove old pipeline asset so we can recreate with a valid renderer reference.
+        var oldAsset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(assetPath);
+        if (oldAsset != null)
         {
-            asset = UniversalRenderPipelineAsset.Create();
-            AssetDatabase.CreateAsset(asset, assetPath);
-            AssetDatabase.SaveAssetIfDirty(asset);
+            AssetDatabase.DeleteAsset(assetPath);
         }
+
+        // Create the renderer data asset on disk.
+        var rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+        AssetDatabase.CreateAsset(rendererData, rendererPath);
+
+        // Create the pipeline asset, referencing the saved renderer data.
+        var asset = UniversalRenderPipelineAsset.Create(rendererData);
+        AssetDatabase.CreateAsset(asset, assetPath);
+
+        AssetDatabase.SaveAssetIfDirty(rendererData);
+        AssetDatabase.SaveAssetIfDirty(asset);
 
         GraphicsSettings.defaultRenderPipeline = asset;
         QualitySettings.renderPipeline = asset;
