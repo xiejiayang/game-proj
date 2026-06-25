@@ -7,7 +7,7 @@ using Dujiangyan.Utils;
 namespace Dujiangyan.Systems
 {
     /// <summary>
-    /// 规则粒子水流模拟
+    /// 规则粒子水流模拟（带可选视觉对象池）
     /// </summary>
     public class WaterSimulation : MonoBehaviour
     {
@@ -15,9 +15,13 @@ namespace Dujiangyan.Systems
 
         public event Action<BlockInstance> OnBlockDestroyed;
 
+        [SerializeField] private GameObject particlePrefab;
+        [SerializeField] private int maxParticles = 200;
+
         private LevelConfigSO config;
         private PuzzleRuntime runtime;
         private readonly List<WaterParticle> particles = new List<WaterParticle>();
+        private readonly List<GameObject> visualPool = new List<GameObject>();
         private float emissionAccumulator;
 
         private const float BounceDamage = 5f;
@@ -39,6 +43,7 @@ namespace Dujiangyan.Systems
             runtime = levelRuntime;
             particles.Clear();
             emissionAccumulator = 0f;
+            SetVisualActiveCount(0);
         }
 
         public void Tick(float deltaTime)
@@ -47,12 +52,14 @@ namespace Dujiangyan.Systems
 
             EmitParticles(deltaTime);
             UpdateParticles(deltaTime);
+            SyncVisuals();
         }
 
         public void Clear()
         {
             particles.Clear();
             emissionAccumulator = 0f;
+            SetVisualActiveCount(0);
         }
 
         public bool HasActiveParticles => particles.Count > 0;
@@ -66,6 +73,8 @@ namespace Dujiangyan.Systems
             Vector3 dir = config.waterSource.emitDirection.normalized;
             for (int i = 0; i < count; i++)
             {
+                if (particles.Count >= maxParticles) break;
+
                 particles.Add(new WaterParticle
                 {
                     position = config.waterSource.position,
@@ -129,11 +138,56 @@ namespace Dujiangyan.Systems
             {
                 // 移除当前粒子，产生两股分流
                 p.isAlive = false;
-                Vector3 vLeft = Quaternion.AngleAxis(-SplitAngle, Vector3.up) * p.velocity;
-                Vector3 vRight = Quaternion.AngleAxis(SplitAngle, Vector3.up) * p.velocity;
-                particles.Add(new WaterParticle { position = p.position, velocity = vLeft, lifetime = p.lifetime, isAlive = true });
-                particles.Add(new WaterParticle { position = p.position, velocity = vRight, lifetime = p.lifetime, isAlive = true });
+                if (particles.Count + 1 < maxParticles)
+                {
+                    Vector3 vLeft = Quaternion.AngleAxis(-SplitAngle, Vector3.up) * p.velocity;
+                    Vector3 vRight = Quaternion.AngleAxis(SplitAngle, Vector3.up) * p.velocity;
+                    particles.Add(new WaterParticle { position = p.position, velocity = vLeft, lifetime = p.lifetime, isAlive = true });
+                    particles.Add(new WaterParticle { position = p.position, velocity = vRight, lifetime = p.lifetime, isAlive = true });
+                }
             }
+        }
+
+        private void SyncVisuals()
+        {
+            SetVisualActiveCount(particles.Count);
+            for (int i = 0; i < particles.Count; i++)
+            {
+                if (visualPool[i] != null)
+                    visualPool[i].transform.position = particles[i].position;
+            }
+        }
+
+        private void SetVisualActiveCount(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (i >= visualPool.Count)
+                    visualPool.Add(CreateVisual());
+                visualPool[i].SetActive(true);
+            }
+            for (int i = count; i < visualPool.Count; i++)
+            {
+                if (visualPool[i] != null)
+                    visualPool[i].SetActive(false);
+            }
+        }
+
+        private GameObject CreateVisual()
+        {
+            GameObject go;
+            if (particlePrefab != null)
+            {
+                go = Instantiate(particlePrefab);
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(go.GetComponent<Collider>());
+                go.transform.localScale = Vector3.one * 0.15f;
+            }
+            go.SetActive(false);
+            return go;
         }
 
         private BlockInstance FindBlockAt(Vector2Int grid)

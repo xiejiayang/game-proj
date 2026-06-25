@@ -21,6 +21,10 @@ public class CreateDataAssets
         string dir = "Assets/_Project/ScriptableObjects/Blocks";
         EnsureDirectory(dir);
 
+        var bambooPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Blocks/Block_Bamboo.prefab");
+        var maochaPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Blocks/Block_Maocha.prefab");
+        var wallPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Blocks/Block_Wall.prefab");
+
         var bamboo = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Bamboo.asset",
             id: "bamboo",
@@ -28,7 +32,8 @@ public class CreateDataAssets
             type: BlockType.Bamboo,
             maxHealth: 30f,
             cost: new ResourceCost { material = 2, labor = 1, time = 0 },
-            interaction: WaterInteraction.Split);
+            interaction: WaterInteraction.Split,
+            prefab: bambooPrefab);
 
         var maocha = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Maocha.asset",
@@ -37,7 +42,8 @@ public class CreateDataAssets
             type: BlockType.Maocha,
             maxHealth: 60f,
             cost: new ResourceCost { material = 4, labor = 2, time = 0 },
-            interaction: WaterInteraction.Split);
+            interaction: WaterInteraction.Split,
+            prefab: maochaPrefab);
 
         var wall = CreateBlockConfig(
             path: $"{dir}/BlockConfig_Wall.asset",
@@ -46,12 +52,13 @@ public class CreateDataAssets
             type: BlockType.Wall,
             maxHealth: 200f,
             cost: new ResourceCost { material = 10, labor = 5, time = 0 },
-            interaction: WaterInteraction.Bounce);
+            interaction: WaterInteraction.Bounce,
+            prefab: wallPrefab);
 
         return new[] { bamboo, maocha, wall };
     }
 
-    private static BlockConfigSO CreateBlockConfig(string path, string id, string displayName, BlockType type, float maxHealth, ResourceCost cost, WaterInteraction interaction)
+    private static BlockConfigSO CreateBlockConfig(string path, string id, string displayName, BlockType type, float maxHealth, ResourceCost cost, WaterInteraction interaction, GameObject prefab)
     {
         AssetDatabase.DeleteAsset(path);
         var asset = ScriptableObject.CreateInstance<BlockConfigSO>();
@@ -61,6 +68,7 @@ public class CreateDataAssets
         asset.maxHealth = maxHealth;
         asset.cost = cost;
         asset.interaction = interaction;
+        asset.prefab = prefab;
         AssetDatabase.CreateAsset(asset, path);
         return asset;
     }

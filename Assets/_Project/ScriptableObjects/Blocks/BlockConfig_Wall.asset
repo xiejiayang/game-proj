@@ -21,4 +21,4 @@ MonoBehaviour:
     labor: 5
     time: 0
   interaction: 0
-  prefab: {fileID: 0}
+  prefab: {fileID: 7625290379182577216, guid: bd8adf72daeb8a04c8670eb710a95fb8, type: 3}
