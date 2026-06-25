@@ -17,6 +17,7 @@ namespace Dujiangyan.Systems
 
         [SerializeField] private GameObject particlePrefab;
         [SerializeField] private int maxParticles = 200;
+        [SerializeField] private Material inkTrailMaterial;
 
         private LevelConfigSO config;
         private PuzzleRuntime runtime;
@@ -35,6 +36,16 @@ namespace Dujiangyan.Systems
                 return;
             }
             Instance = this;
+
+            if (inkTrailMaterial == null)
+            {
+                var shader = Shader.Find("Dujiangyan/InkTrail");
+                if (shader != null)
+                {
+                    inkTrailMaterial = new Material(shader);
+                    inkTrailMaterial.SetColor("_Color", new Color(0.227f, 0.353f, 0.416f, 0.6f));
+                }
+            }
         }
 
         public void Initialize(LevelConfigSO levelConfig, PuzzleRuntime levelRuntime)
@@ -186,7 +197,27 @@ namespace Dujiangyan.Systems
                 go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 Destroy(go.GetComponent<Collider>());
                 go.transform.localScale = Vector3.one * 0.15f;
+                var rend = go.GetComponent<Renderer>();
+                if (rend != null)
+                {
+                    rend.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Simple Lit"));
+                    rend.sharedMaterial.color = new Color(0.227f, 0.353f, 0.416f, 1f);
+                }
             }
+
+            if (go.GetComponent<TrailRenderer>() == null)
+            {
+                var trail = go.AddComponent<TrailRenderer>();
+                trail.time = 0.25f;
+                trail.startWidth = 0.06f;
+                trail.endWidth = 0.01f;
+                trail.minVertexDistance = 0.02f;
+                trail.material = inkTrailMaterial;
+                trail.startColor = new Color(1f, 1f, 1f, 0.7f);
+                trail.endColor = new Color(1f, 1f, 1f, 0f);
+                trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
             go.SetActive(false);
             return go;
         }

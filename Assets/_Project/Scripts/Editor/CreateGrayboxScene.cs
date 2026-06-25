@@ -21,11 +21,13 @@ public class CreateGrayboxScene
         // 水墨淡彩配色（DESIGN §2）
         var paper = new Color(0.969f, 0.953f, 0.914f); // #f7f3e9
         var paperDark = new Color(0.910f, 0.878f, 0.816f); // #e8e0d0
+        var inkDark = new Color(0.102f, 0.102f, 0.102f); // #1a1a1a
         var inkMid = new Color(0.290f, 0.290f, 0.290f); // #4a4a4a
         var waterColor = new Color(0.227f, 0.353f, 0.416f, 0.75f); // #3a5a6a
         var dangerColor = new Color(0.545f, 0.227f, 0.227f, 0.35f); // #8b3a3a
 
-        var grayMat = CreateMaterial("InkPaper_Ground", paperDark);
+        Shader inkShader = Shader.Find("Dujiangyan/InkWash");
+        var grayMat = CreateMaterial("InkPaper_Ground", inkShader, paperDark, inkDark);
         var waterMat = CreateMaterial("InkWater_Source", waterColor);
         var villageMat = CreateMaterial("InkWater_Village", dangerColor);
         var waterSurfaceMat = CreateMaterial("InkWater_Surface", waterColor);
@@ -305,6 +307,25 @@ public class CreateGrayboxScene
             mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.renderQueue = 3000;
         }
+        AssetDatabase.CreateAsset(mat, path);
+        return mat;
+    }
+
+    private static Material CreateMaterial(string name, Shader shader, Color baseColor, Color inkColor)
+    {
+        string dir = "Assets/_Project/Art/Materials/Graybox";
+        if (!AssetDatabase.IsValidFolder(dir))
+        {
+            string parent = System.IO.Path.GetDirectoryName(dir).Replace('\\', '/');
+            string folderName = System.IO.Path.GetFileName(dir);
+            AssetDatabase.CreateFolder(parent, folderName);
+        }
+        string path = $"{dir}/{name}.mat";
+        AssetDatabase.DeleteAsset(path);
+        var mat = new Material(shader);
+        mat.name = name;
+        mat.SetColor("_BaseColor", baseColor);
+        mat.SetColor("_InkColor", inkColor);
         AssetDatabase.CreateAsset(mat, path);
         return mat;
     }

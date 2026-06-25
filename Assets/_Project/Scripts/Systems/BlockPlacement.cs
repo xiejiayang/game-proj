@@ -17,6 +17,7 @@ namespace Dujiangyan.Systems
         [SerializeField] private LayerMask groundMask = ~0;
         [SerializeField] private Material validMaterial;
         [SerializeField] private Material invalidMaterial;
+        [SerializeField] private Material blockMaterial;
 
         private Camera mainCamera;
         private GameObject ghost;
@@ -36,6 +37,17 @@ namespace Dujiangyan.Systems
             }
             Instance = this;
             mainCamera = Camera.main;
+
+            if (blockMaterial == null)
+            {
+                var shader = Shader.Find("Dujiangyan/InkWash");
+                if (shader != null)
+                {
+                    blockMaterial = new Material(shader);
+                    blockMaterial.SetColor("_BaseColor", new Color(0.75f, 0.68f, 0.58f));
+                    blockMaterial.SetColor("_InkColor", new Color(0.1f, 0.1f, 0.1f));
+                }
+            }
         }
 
         private void OnEnable()
@@ -226,13 +238,18 @@ namespace Dujiangyan.Systems
             if (placedVisuals.ContainsKey(instance.instanceId)) return;
 
             var blockConfig = Resources.Load<BlockDatabaseSO>("BlockDatabase")?.GetBlock(instance.blockId);
-            GameObject visual = blockConfig != null && blockConfig.prefab != null
+            bool hasPrefab = blockConfig != null && blockConfig.prefab != null;
+            GameObject visual = hasPrefab
                 ? Instantiate(blockConfig.prefab)
                 : GameObject.CreatePrimitive(PrimitiveType.Cube);
 
             visual.name = $"Block_{instance.blockId}_{instance.instanceId}";
             visual.transform.position = instance.position;
             visual.transform.rotation = Quaternion.Euler(0, instance.rotStep * 90f, 0);
+
+            if (!hasPrefab && blockMaterial != null)
+                visual.GetComponent<Renderer>().sharedMaterial = blockMaterial;
+
             placedVisuals[instance.instanceId] = visual;
             StartCoroutine(AnimatePlace(visual));
         }
