@@ -75,6 +75,11 @@ namespace Dujiangyan.Systems
 
         public bool HasActiveParticles => particles.Count > 0;
 
+        public void SetMaxParticles(int limit)
+        {
+            maxParticles = Mathf.Max(0, limit);
+        }
+
         private void EmitParticles(float deltaTime)
         {
             emissionAccumulator += config.waterSource.emissionRate * deltaTime;
@@ -84,7 +89,8 @@ namespace Dujiangyan.Systems
             Vector3 dir = config.waterSource.emitDirection.normalized;
             for (int i = 0; i < count; i++)
             {
-                if (particles.Count >= maxParticles) break;
+                if (particles.Count >= maxParticles)
+                    break;
 
                 particles.Add(new WaterParticle
                 {
