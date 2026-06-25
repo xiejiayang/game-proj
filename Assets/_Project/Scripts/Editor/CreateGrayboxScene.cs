@@ -398,6 +398,7 @@ public class CreateGrayboxScene
         btn.targetGraphic = image;
         if (action != null)
             btn.onClick.AddListener(action);
+        go.AddComponent<Dujiangyan.UI.ButtonFeedback>();
 
         var rect = go.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(100f, 50f);
@@ -438,6 +439,7 @@ public class CreateGrayboxScene
 
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = bg;
+        go.AddComponent<Dujiangyan.UI.ButtonFeedback>();
 
         var iconGO = new GameObject("Icon");
         iconGO.transform.SetParent(go.transform, false);

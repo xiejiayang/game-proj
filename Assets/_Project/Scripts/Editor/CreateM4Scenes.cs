@@ -198,6 +198,7 @@ public class CreateM4Scenes
         btn.targetGraphic = image;
         if (action != null)
             btn.onClick.AddListener(action);
+        go.AddComponent<Dujiangyan.UI.ButtonFeedback>();
 
         var rect = go.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(160f, 50f);
