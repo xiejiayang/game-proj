@@ -47,12 +47,12 @@
 
 | 编号 | 任务 | 优先级 | 状态 | 验收标准 | 关联规范 |
 |---|---|---|---|---|---|
-| M1.2.1 | 实现 `LevelConfigSO` ScriptableObject | P0 | 未开始 | 包含 PRD/ARCH 中全部字段：`id`、`act`、`title`、`targetDuration`、`terrain`、`waterSource`、`village`、`inventory`、`resourceLimit`、`frugalThreshold`、`hintTree`、`narrative`、`galleryUnlocks`、`hiddenGalleryUnlocks` | ARCH §3.1 |
-| M1.2.2 | 实现 `BlockConfigSO` ScriptableObject | P0 | 未开始 | 包含 `id`、`displayName`、`type`、`maxHealth`、`cost`、`interaction`、`prefab`；类型枚举 `Bamboo / Maocha / Wall` | ARCH §3.2 |
-| M1.2.3 | 实现运行时数据结构：`PuzzleRuntime`、`BlockInstance`、`PuzzleResult`、`PlayerProfile`、`GameSettings` | P0 | 未开始 | 字段与 `ARCHITECTURE.md` §3.3–3.6 一致；全部可序列化 | ARCH §3.3–3.6 |
-| M1.2.4 | 配置 L1 关卡数据资产 | P0 | 未开始 | 创建 `Assets/_Project/ScriptableObjects/Levels/LevelConfig_L1.asset`；预置官方石墙、水源、村庄、竹笼/杩槎库存、资源上限、节俭阈值 | PRD §3.2、§5.1 |
-| M1.2.5 | 配置竹笼、杩槎、石墙构件资产 | P0 | 未开始 | 创建 `Assets/_Project/ScriptableObjects/Blocks/` 下三个 `.asset`；耐久关系满足竹笼 < 杩槎 < 石墙 | PRD §6.3、ARCH §3.2 |
-| M1.2.6 | 配置 L1 老河工提示树（仅两层） | P1 | 未开始 | 第 3 次失败触发第一层（描述现象），第 5 次失败触发第二层（指向工具）；第三层数据可留空或不配置 | PRD §5.2、ARCH §F7 |
+| M1.2.1 | 实现 `LevelConfigSO` ScriptableObject | P0 | 已完成 | 包含 PRD/ARCH 中全部字段，位于 `Assets/_Project/Scripts/Data/LevelConfigSO.cs` | ARCH §3.1 |
+| M1.2.2 | 实现 `BlockConfigSO` ScriptableObject | P0 | 已完成 | 包含全部字段，位于 `Assets/_Project/Scripts/Data/BlockConfigSO.cs`；已创建竹笼/杩槎/石墙三个资产 | ARCH §3.2 |
+| M1.2.3 | 实现运行时数据结构：`PuzzleRuntime`、`BlockInstance`、`PuzzleResult`、`PlayerProfile`、`GameSettings` | P0 | 已完成 | 字段与 `ARCHITECTURE.md` §3.3–3.6 一致；全部可序列化，位于 `Assets/_Project/Scripts/Data/RuntimeData.cs` | ARCH §3.3–3.6 |
+| M1.2.4 | 配置 L1 关卡数据资产 | P0 | 已完成 | 已创建 `Assets/_Project/ScriptableObjects/Levels/LevelConfig_L1.asset`，包含地形、水源、村庄、库存、资源上限、节俭阈值、提示树、叙事、碑廊解锁 | PRD §3.2、§5.1 |
+| M1.2.5 | 配置竹笼、杩槎、石墙构件资产 | P0 | 已完成 | 已创建三个 `.asset`；耐久关系：竹笼 30 < 杩槎 60 < 石墙 200 | PRD §6.3、ARCH §3.2 |
+| M1.2.6 | 配置 L1 老河工提示树（仅两层） | P1 | 已完成 | 第 3 次失败触发第一层（描述现象），第 5 次失败触发第二层（指向工具）；未配置第三层 | PRD §5.2、ARCH §F7 |
 
 ### M1.3 核心服务层（单例 + 事件）
 
