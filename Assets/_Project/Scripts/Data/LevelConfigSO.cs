@@ -23,6 +23,9 @@ namespace Dujiangyan.Data
         public WaterSourceConfig waterSource;    // 水源参数
         public VillageConfig village;            // 村庄位置与存活条件
 
+        [Header("预置构件")]
+        public PreplacedBlock[] preplacedBlocks; // 关卡初始已放置的构件（如官方石墙）
+
         [Header("构件库存")]
         public BlockInventory inventory;         // 初始构件库存
 

@@ -68,6 +68,18 @@ public class ValidateDataAssets
             }
         }
 
+        var database = AssetDatabase.LoadAssetAtPath<LevelDatabaseSO>("Assets/_Project/Resources/LevelDatabase.asset");
+        if (database == null)
+        {
+            Debug.LogError("[ValidateDataAssets] LevelDatabase.asset missing.");
+            ok = false;
+        }
+        else if (database.GetLevel("L1") == null)
+        {
+            Debug.LogError("[ValidateDataAssets] LevelDatabase does not contain L1.");
+            ok = false;
+        }
+
         if (ok)
         {
             Debug.Log("[ValidateDataAssets] L1 data assets are valid.");

@@ -58,6 +58,18 @@ namespace Dujiangyan.Data
     }
 
     /// <summary>
+    /// 预置方块配置（如 L1 官方石墙）
+    /// </summary>
+    [Serializable]
+    public struct PreplacedBlock
+    {
+        public string blockId;
+        public Vector3 position;
+        public int rotStep;
+        public bool isIndestructible;
+    }
+
+    /// <summary>
     /// 资源消耗：料 / 工 / 时
     /// </summary>
     [Serializable]
@@ -223,6 +235,26 @@ namespace Dujiangyan.Data
     }
 
     /// <summary>
+    /// 放置/移动/旋转/移除操作的通用结果
+    /// </summary>
+    [Serializable]
+    public struct OperationResult
+    {
+        public bool success;
+        public string errorMessage;
+    }
+
+    /// <summary>
+    /// 开始模拟的结果
+    /// </summary>
+    [Serializable]
+    public struct SimulationResult
+    {
+        public bool success;
+        public string errorMessage;
+    }
+
+    /// <summary>
     /// 运行时构件实例
     /// </summary>
     [Serializable]
@@ -234,6 +266,8 @@ namespace Dujiangyan.Data
         public int rotStep;
         public float health;
         public float maxHealth;
+        public WaterInteraction interaction;
+        public bool isIndestructible;
     }
 
     /// <summary>
