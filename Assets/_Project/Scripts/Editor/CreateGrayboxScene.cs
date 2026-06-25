@@ -19,7 +19,7 @@ public class CreateGrayboxScene
         var grayMat = CreateMaterial("Graybox_Ground", new Color(0.75f, 0.72f, 0.68f));
         var waterMat = CreateMaterial("Graybox_Water", new Color(0.2f, 0.45f, 0.75f));
         var villageMat = CreateMaterial("Graybox_Village", new Color(0.8f, 0.3f, 0.3f, 0.4f));
-        villageMat.SetFloat("_Surface", 1); // transparent
+        villageMat.SetFloat("_Surface", 1);
 
         // Ground
         var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -60,8 +60,7 @@ public class CreateGrayboxScene
         village.transform.position = new Vector3(4f, 0.05f, 2f);
         village.transform.localScale = new Vector3(3f, 0.1f, 3f);
         village.GetComponent<Renderer>().sharedMaterial = villageMat;
-        var villageCollider = village.GetComponent<BoxCollider>();
-        villageCollider.isTrigger = true;
+        village.GetComponent<BoxCollider>().isTrigger = true;
 
         // Services
         var services = new GameObject("Services");
@@ -73,34 +72,175 @@ public class CreateGrayboxScene
         services.AddComponent<WaterSimulation>();
         services.AddComponent<BlockPlacement>();
 
-        // UI
+        // UI Canvas
         var canvasGO = new GameObject("Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         canvasGO.AddComponent<GraphicRaycaster>();
+
         var levelUI = canvasGO.AddComponent<LevelUI>();
 
-        var inventoryText = CreateText(canvasGO.transform, "InventoryText", "竹笼: 0  杩槎: 0  石墙: 0",
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-200f, -60f), new Vector2(200f, -10f), 28);
-        var statusText = CreateText(canvasGO.transform, "StatusText", "编辑阶段",
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-150f, -110f), new Vector2(150f, -70f), 24);
+        // Resource HUD
+        var hudGO = CreatePanel(canvasGO.transform, "ResourceHUD", new Vector2(0, 1), new Vector2(0, 1),
+            new Vector2(16, -100), new Vector2(220, -16), new Color(1, 1, 1, 0.4f));
+        var hud = hudGO.AddComponent<ResourceHUD>();
+        var matLabel = CreateText(hudGO.transform, "MaterialLabel", "料 0", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(8, -12), new Vector2(70, 12), 16, TextAlignmentOptions.Left);
+        var laborLabel = CreateText(hudGO.transform, "LaborLabel", "工 0", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(78, -12), new Vector2(140, 12), 16, TextAlignmentOptions.Left);
+        var timeLabel = CreateText(hudGO.transform, "TimeLabel", "时 0", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(148, -12), new Vector2(210, 12), 16, TextAlignmentOptions.Left);
+        SetField(hud, "materialLabel", matLabel);
+        SetField(hud, "laborLabel", laborLabel);
+        SetField(hud, "timeLabel", timeLabel);
 
-        float btnY = 120f;
-        float spacing = 110f;
-        CreateButton(canvasGO.transform, "竹笼", new Vector2(spacing * 0, btnY), levelUI.SelectBamboo);
-        CreateButton(canvasGO.transform, "杩槎", new Vector2(spacing * 1, btnY), levelUI.SelectMaocha);
-        CreateButton(canvasGO.transform, "旋转", new Vector2(spacing * 2, btnY), levelUI.RotatePending);
-        CreateButton(canvasGO.transform, "放水", new Vector2(spacing * 3, btnY), levelUI.StartSimulation);
-        CreateButton(canvasGO.transform, "重置", new Vector2(spacing * 4, btnY), levelUI.ResetLevel);
+        // HintPill
+        var pillGO = CreatePanel(canvasGO.transform, "HintPill", new Vector2(0.5f, 1), new Vector2(0.5f, 1),
+            new Vector2(-150, -70), new Vector2(150, -30), new Color(0.97f, 0.95f, 0.91f, 0.95f));
+        pillGO.AddComponent<CanvasGroup>();
+        var pillLabel = CreateText(pillGO.transform, "Label", "", Vector2.zero, Vector2.one,
+            new Vector2(12, 8), new Vector2(-12, -8), 16, TextAlignmentOptions.Center);
+        var pill = pillGO.AddComponent<HintPill>();
+        SetField(pill, "label", pillLabel);
+        SetField(pill, "canvasGroup", pillGO.GetComponent<CanvasGroup>());
+
+        // Toolbar
+        var toolbarGO = CreatePanel(canvasGO.transform, "Toolbar", new Vector2(0.5f, 0), new Vector2(0.5f, 0),
+            new Vector2(-140, 80), new Vector2(140, 16), new Color(1, 1, 1, 0.3f));
+        var toolbar = toolbarGO.AddComponent<Toolbar>();
+        var bambooBtn = CreateToolbarItem(toolbarGO.transform, "竹笼", new Vector2(-70, 0));
+        var maochaBtn = CreateToolbarItem(toolbarGO.transform, "杩槎", new Vector2(0, 0));
+        var rotateBtn = CreateToolbarItem(toolbarGO.transform, "旋转", new Vector2(70, 0));
+        rotateBtn.button.onClick.AddListener(levelUI.RotatePending);
+
+        var toolbarItems = new Toolbar.ToolbarItem[2];
+        toolbarItems[0] = new Toolbar.ToolbarItem { blockId = "bamboo", button = bambooBtn.button, countLabel = bambooBtn.count, background = bambooBtn.bg };
+        toolbarItems[1] = new Toolbar.ToolbarItem { blockId = "maocha", button = maochaBtn.button, countLabel = maochaBtn.count, background = maochaBtn.bg };
+        SetField(toolbar, "items", toolbarItems);
+        bambooBtn.button.onClick.AddListener(levelUI.SelectBamboo);
+        maochaBtn.button.onClick.AddListener(levelUI.SelectMaocha);
+
+        // Pause button
+        var pauseBtn = CreateButton(canvasGO.transform, "暂停", new Vector2(40, 40), levelUI.TogglePause);
+
+        // Status text
+        var statusText = CreateText(canvasGO.transform, "StatusText", "编辑阶段",
+            new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(-100, -120), new Vector2(100, -90), 20, TextAlignmentOptions.Center);
+
+        // Inventory text (legacy small)
+        var inventoryText = CreateText(canvasGO.transform, "InventoryText", "",
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(240, -60), new Vector2(420, -30), 14, TextAlignmentOptions.Left);
+
+        // HintDialog
+        var hintDialogGO = CreatePanel(canvasGO.transform, "HintDialog", new Vector2(0.5f, 0), new Vector2(0.5f, 0),
+            new Vector2(-200, 120), new Vector2(200, 16), new Color(0.97f, 0.95f, 0.91f, 0.98f));
+        var hintDialogCG = hintDialogGO.AddComponent<CanvasGroup>();
+        var hintSpeaker = CreateText(hintDialogGO.transform, "Speaker", "老河工", new Vector2(0, 1), new Vector2(0, 1),
+            new Vector2(12, -40), new Vector2(120, -12), 16, TextAlignmentOptions.Left);
+        var hintContent = CreateText(hintDialogGO.transform, "Content", "", new Vector2(0, 0.5f), new Vector2(1, 0.5f),
+            new Vector2(12, -24), new Vector2(-12, 24), 16, TextAlignmentOptions.Left);
+        var hintClose = CreateButton(hintDialogGO.transform, "知道了", new Vector2(0, -40), null);
+        var hintDialog = hintDialogGO.AddComponent<HintDialog>();
+        SetField(hintDialog, "speakerLabel", hintSpeaker);
+        SetField(hintDialog, "contentLabel", hintContent);
+        SetField(hintDialog, "closeButton", hintClose);
+        SetField(hintDialog, "canvasGroup", hintDialogCG);
+        hintClose.onClick.AddListener(hintDialog.Hide);
+
+        // ResultModal
+        var resultGO = CreateFullScreenOverlay(canvasGO.transform, "ResultModal");
+        var resultCG = resultGO.AddComponent<CanvasGroup>();
+        resultCG.alpha = 0;
+        resultCG.blocksRaycasts = false;
+
+        var screen1 = CreatePanel(resultGO.transform, "Screen1", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.97f, 0.95f, 0.91f, 1f));
+        var screen2 = CreatePanel(resultGO.transform, "Screen2", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.97f, 0.95f, 0.91f, 1f));
+        screen2.SetActive(false);
+
+        var seal = CreateText(screen1.transform, "Seal", "安", new Vector2(0.5f, 0.75f), new Vector2(0.5f, 0.75f),
+            new Vector2(-60, -60), new Vector2(60, 60), 64, TextAlignmentOptions.Center);
+        var resultTitle = CreateText(screen1.transform, "Title", "暂时安全", new Vector2(0.5f, 0.6f), new Vector2(0.5f, 0.6f),
+            new Vector2(-120, -30), new Vector2(120, 10), 28, TextAlignmentOptions.Center);
+        var resultDesc = CreateText(screen1.transform, "Desc", "", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(-160, -20), new Vector2(160, 40), 18, TextAlignmentOptions.Center);
+
+        var successGroup = new GameObject("SuccessGroup");
+        successGroup.transform.SetParent(screen1.transform, false);
+        var failGroup = new GameObject("FailGroup");
+        failGroup.transform.SetParent(screen1.transform, false);
+
+        var galleryBtn = CreateButton(screen1.transform, "查看碑廊", new Vector2(0, -60), null);
+        var retryBtnS1 = CreateButton(screen1.transform, "再试一次", new Vector2(0, -120), null);
+
+        var galleryTitle = CreateText(screen2.transform, "GalleryTitle", "堵不如疏", new Vector2(0.5f, 0.75f), new Vector2(0.5f, 0.75f),
+            new Vector2(-120, -30), new Vector2(120, 10), 28, TextAlignmentOptions.Center);
+        var galleryContent = CreateText(screen2.transform, "GalleryContent", "", new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f),
+            new Vector2(-180, -80), new Vector2(180, 80), 18, TextAlignmentOptions.Center);
+        var retryBtnS2 = CreateButton(screen2.transform, "再试一次", new Vector2(-80, -140), null);
+        var nextLevelBtn = CreateButton(screen2.transform, "下一关", new Vector2(80, -140), null);
+
+        var resultModal = resultGO.AddComponent<ResultModal>();
+        SetField(resultModal, "screen1", screen1);
+        SetField(resultModal, "screen2", screen2);
+        SetField(resultModal, "successGroup", successGroup);
+        SetField(resultModal, "successTitle", resultTitle);
+        SetField(resultModal, "successDesc", resultDesc);
+        SetField(resultModal, "galleryButton", galleryBtn);
+        SetField(resultModal, "failGroup", failGroup);
+        SetField(resultModal, "failTitle", resultTitle);
+        SetField(resultModal, "failDesc", resultDesc);
+        SetField(resultModal, "sealLabel", seal);
+        SetField(resultModal, "retryButtonS1", retryBtnS1);
+        SetField(resultModal, "retryButtonS2", retryBtnS2);
+        SetField(resultModal, "nextLevelButton", nextLevelBtn);
+        SetField(resultModal, "galleryContent", galleryContent);
+
+        // PauseMenu
+        var pauseGO = CreateFullScreenOverlay(canvasGO.transform, "PauseMenu");
+        var pauseImage = pauseGO.GetComponent<Image>();
+        pauseImage.color = new Color(0.97f, 0.95f, 0.91f, 0.95f);
+        var pauseCG = pauseGO.AddComponent<CanvasGroup>();
+
+        var pauseTitle = CreateText(pauseGO.transform, "Title", "已暂停", new Vector2(0.5f, 0.75f), new Vector2(0.5f, 0.75f),
+            new Vector2(-100, -30), new Vector2(100, 10), 28, TextAlignmentOptions.Center);
+        var resumeBtn = CreateButton(pauseGO.transform, "继续", new Vector2(0, 40), null);
+        var retryBtnPause = CreateButton(pauseGO.transform, "重试", new Vector2(0, -30), null);
+        var settingsPanel = CreatePanel(pauseGO.transform, "Settings", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(-120, -60), new Vector2(120, -100), new Color(1, 1, 1, 0.4f));
+        var musicLabel = CreateText(settingsPanel.transform, "MusicLabel", "音乐", new Vector2(0, 1), new Vector2(0, 1),
+            new Vector2(10, -30), new Vector2(60, -8), 14, TextAlignmentOptions.Left);
+        var musicSliderGO = CreateSlider(settingsPanel.transform, new Vector2(70, -20), "MusicSlider");
+        var sfxLabel = CreateText(settingsPanel.transform, "SfxLabel", "音效", new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(10, -15), new Vector2(60, 15), 14, TextAlignmentOptions.Left);
+        var sfxSliderGO = CreateSlider(settingsPanel.transform, new Vector2(70, 0), "SfxSlider");
+        var titleBtn = CreateButton(pauseGO.transform, "返回标题", new Vector2(0, -160), null);
+
+        var pauseMenu = pauseGO.AddComponent<PauseMenu>();
+        SetField(pauseMenu, "canvasGroup", pauseCG);
+        SetField(pauseMenu, "resumeButton", resumeBtn);
+        SetField(pauseMenu, "retryButton", retryBtnPause);
+        SetField(pauseMenu, "musicSlider", musicSliderGO.GetComponent<Slider>());
+        SetField(pauseMenu, "sfxSlider", sfxSliderGO.GetComponent<Slider>());
+        SetField(pauseMenu, "titleButton", titleBtn);
+
+        // Wire LevelUI
+        SetField(levelUI, "hintPill", pill);
+        SetField(levelUI, "hintDialog", hintDialog);
+        SetField(levelUI, "resultModal", resultModal);
+        SetField(levelUI, "pauseMenu", pauseMenu);
 
         // Bootstrap
         var bootstrapGO = new GameObject("LevelBootstrap");
         var bootstrap = bootstrapGO.AddComponent<LevelBootstrap>();
-        bootstrap.GetType().GetField("inventoryText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?.SetValue(bootstrap, inventoryText);
-        bootstrap.GetType().GetField("statusText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?.SetValue(bootstrap, statusText);
+        SetField(bootstrap, "inventoryText", inventoryText);
+        SetField(bootstrap, "statusText", statusText);
+        SetField(bootstrap, "levelUI", levelUI);
+
+        // HintSystem
+        var hintSystemGO = new GameObject("HintSystem");
+        var hintSystem = hintSystemGO.AddComponent<HintSystem>();
+        SetField(hintSystem, "levelUI", levelUI);
 
         EditorSceneManager.SaveScene(scene, scenePath);
         AssetDatabase.SaveAssets();
@@ -136,16 +276,44 @@ public class CreateGrayboxScene
         return mat;
     }
 
+    private static GameObject CreatePanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var image = go.AddComponent<Image>();
+        image.color = color;
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+        return go;
+    }
+
+    private static GameObject CreateFullScreenOverlay(Transform parent, string name)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var image = go.AddComponent<Image>();
+        image.color = new Color(0, 0, 0, 0.5f);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        return go;
+    }
+
     private static TextMeshProUGUI CreateText(Transform parent, string name, string content,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, float fontSize)
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, float fontSize, TextAlignmentOptions alignment)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var text = go.AddComponent<TextMeshProUGUI>();
         text.text = content;
         text.fontSize = fontSize;
-        text.alignment = TextAlignmentOptions.Center;
-        text.color = Color.black;
+        text.alignment = alignment;
+        text.color = new Color(0.1f, 0.1f, 0.1f, 1f);
         if (TMP_Settings.defaultFontAsset != null)
             text.font = TMP_Settings.defaultFontAsset;
         var rect = go.GetComponent<RectTransform>();
@@ -164,21 +332,22 @@ public class CreateGrayboxScene
         image.color = new Color(0.9f, 0.9f, 0.9f);
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = image;
-        btn.onClick.AddListener(action);
+        if (action != null)
+            btn.onClick.AddListener(action);
 
         var rect = go.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(100f, 60f);
-        rect.anchorMin = new Vector2(0.5f, 0f);
-        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.sizeDelta = new Vector2(100f, 50f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = anchoredPos;
 
         var textGO = new GameObject("Text");
         textGO.transform.SetParent(go.transform, false);
         var text = textGO.AddComponent<TextMeshProUGUI>();
         text.text = label;
-        text.fontSize = 24;
+        text.fontSize = 18;
         text.alignment = TextAlignmentOptions.Center;
-        text.color = Color.black;
+        text.color = new Color(0.1f, 0.1f, 0.1f, 1f);
         if (TMP_Settings.defaultFontAsset != null)
             text.font = TMP_Settings.defaultFontAsset;
         var textRect = textGO.GetComponent<RectTransform>();
@@ -188,5 +357,108 @@ public class CreateGrayboxScene
         textRect.offsetMax = Vector2.zero;
 
         return btn;
+    }
+
+    private static (Button button, TextMeshProUGUI count, Image bg) CreateToolbarItem(Transform parent, string label, Vector2 anchoredPos)
+    {
+        var go = new GameObject($"ToolbarItem_{label}");
+        go.transform.SetParent(parent, false);
+        var rect = go.AddComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(60f, 60f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = anchoredPos;
+
+        var bg = go.AddComponent<Image>();
+        bg.color = new Color(1, 1, 1, 0.4f);
+
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = bg;
+
+        var iconGO = new GameObject("Icon");
+        iconGO.transform.SetParent(go.transform, false);
+        var icon = iconGO.AddComponent<TextMeshProUGUI>();
+        icon.text = label.Substring(0, 1);
+        icon.fontSize = 22;
+        icon.alignment = TextAlignmentOptions.Center;
+        icon.color = new Color(0.1f, 0.1f, 0.1f, 1f);
+        if (TMP_Settings.defaultFontAsset != null)
+            icon.font = TMP_Settings.defaultFontAsset;
+        var iconRect = iconGO.GetComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0, 0.3f);
+        iconRect.anchorMax = new Vector2(1, 1);
+        iconRect.offsetMin = Vector2.zero;
+        iconRect.offsetMax = Vector2.zero;
+
+        var countGO = new GameObject("Count");
+        countGO.transform.SetParent(go.transform, false);
+        var count = countGO.AddComponent<TextMeshProUGUI>();
+        count.text = "0";
+        count.fontSize = 11;
+        count.alignment = TextAlignmentOptions.Center;
+        count.color = new Color(0.1f, 0.1f, 0.1f, 1f);
+        if (TMP_Settings.defaultFontAsset != null)
+            count.font = TMP_Settings.defaultFontAsset;
+        var countRect = countGO.GetComponent<RectTransform>();
+        countRect.anchorMin = new Vector2(0, 0);
+        countRect.anchorMax = new Vector2(1, 0.3f);
+        countRect.offsetMin = Vector2.zero;
+        countRect.offsetMax = Vector2.zero;
+
+        return (btn, count, bg);
+    }
+
+    private static GameObject CreateSlider(Transform parent, Vector2 anchoredPos, string name)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var slider = go.AddComponent<Slider>();
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.value = 0.7f;
+        var rect = go.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(120f, 20f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = anchoredPos;
+
+        var bgGO = new GameObject("Background");
+        bgGO.transform.SetParent(go.transform, false);
+        var bgImg = bgGO.AddComponent<Image>();
+        bgImg.color = new Color(0.8f, 0.8f, 0.8f);
+        var bgRect = bgGO.GetComponent<RectTransform>();
+        bgRect.anchorMin = Vector2.zero;
+        bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero;
+        bgRect.offsetMax = Vector2.zero;
+        slider.targetGraphic = bgImg;
+
+        var fillArea = new GameObject("Fill Area");
+        fillArea.transform.SetParent(go.transform, false);
+        var fillAreaRect = fillArea.AddComponent<RectTransform>();
+        fillAreaRect.anchorMin = Vector2.zero;
+        fillAreaRect.anchorMax = Vector2.one;
+        fillAreaRect.offsetMin = Vector2.zero;
+        fillAreaRect.offsetMax = Vector2.zero;
+
+        var fillGO = new GameObject("Fill");
+        fillGO.transform.SetParent(fillArea.transform, false);
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.color = new Color(0.18f, 0.35f, 0.29f);
+        var fillRect = fillGO.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
+        slider.fillRect = fillRect;
+        slider.direction = Slider.Direction.LeftToRight;
+
+        return go;
+    }
+
+    private static void SetField(object target, string fieldName, object value)
+    {
+        var field = target.GetType().GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+        field?.SetValue(target, value);
     }
 }

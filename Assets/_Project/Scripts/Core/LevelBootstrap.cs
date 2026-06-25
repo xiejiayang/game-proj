@@ -1,16 +1,18 @@
 using UnityEngine;
 using Dujiangyan.Systems;
+using Dujiangyan.UI;
 using TMPro;
 
 namespace Dujiangyan.Core
 {
     /// <summary>
-    /// L1 灰盒场景启动器：初始化服务与关卡
+    /// L1 灰盒场景启动器：初始化服务、关卡与 UI
     /// </summary>
     public class LevelBootstrap : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI inventoryText;
         [SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private LevelUI levelUI;
 
         private void Start()
         {
@@ -59,19 +61,19 @@ namespace Dujiangyan.Core
                 inventoryText.text = $"竹笼: {inventory.bamboo}  杩槎: {inventory.maocha}  石墙: {inventory.wall}";
         }
 
+        private void UpdateStatusUI(string msg)
+        {
+            if (statusText != null)
+                statusText.text = msg;
+        }
+
         private void OnLevelSettled(Dujiangyan.Data.PuzzleResult result)
         {
             string msg = result.isSuccess
                 ? $"成功！{(result.isFrugal ? "节俭" : "非节俭")}"
                 : $"失败：{result.failReason}";
             UpdateStatusUI(msg);
-            UIManager.Instance.ShowResult(result);
-        }
-
-        private void UpdateStatusUI(string msg)
-        {
-            if (statusText != null)
-                statusText.text = msg;
+            levelUI?.ShowResult(result);
         }
     }
 }
