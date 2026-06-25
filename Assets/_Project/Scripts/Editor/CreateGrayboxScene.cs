@@ -58,6 +58,9 @@ public class CreateGrayboxScene
         // Global Volume (post-processing)
         CreateGlobalVolume(paperDark, inkMid);
 
+        // URP fog for distance haze
+        EnableURPFog(inkMid);
+
         // Light
         var lightGO = new GameObject("Directional Light");
         lightGO.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
@@ -106,6 +109,9 @@ public class CreateGrayboxScene
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         canvasGO.AddComponent<GraphicRaycaster>();
+
+        // Paper noise overlay (DESIGN §2.3: 6% background texture)
+        CreatePaperNoiseOverlay(canvasGO.transform);
 
         var levelUI = canvasGO.AddComponent<LevelUI>();
 
@@ -587,6 +593,63 @@ public class CreateGrayboxScene
 
         foreach (var rend in go.GetComponentsInChildren<Renderer>())
             rend.sharedMaterial = material;
+    }
+
+    private static void EnableURPFog(Color fogColor)
+    {
+        var urpAsset = GraphicsSettings.defaultRenderPipeline as UniversalRenderPipelineAsset;
+        if (urpAsset != null)
+        {
+            var prop = urpAsset.GetType().GetProperty("supportsFog");
+            if (prop != null)
+                prop.SetValue(urpAsset, true);
+        }
+
+        RenderSettings.fog = true;
+        RenderSettings.fogMode = FogMode.Linear;
+        RenderSettings.fogColor = fogColor;
+        RenderSettings.fogStartDistance = 12f;
+        RenderSettings.fogEndDistance = 32f;
+    }
+
+    private static void CreatePaperNoiseOverlay(Transform canvas)
+    {
+        string texDir = "Assets/_Project/Art/UI/Textures";
+        string texPath = $"{texDir}/PaperNoise.png";
+        if (!AssetDatabase.IsValidFolder(texDir))
+        {
+            string parent = System.IO.Path.GetDirectoryName(texDir).Replace('\\', '/');
+            string folderName = System.IO.Path.GetFileName(texDir);
+            AssetDatabase.CreateFolder(parent, folderName);
+        }
+        AssetDatabase.DeleteAsset(texPath);
+
+        int size = 512;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float n = Mathf.PerlinNoise(x * 0.02f, y * 0.02f) * 0.5f +
+                          Mathf.PerlinNoise(x * 0.07f, y * 0.07f) * 0.5f;
+                tex.SetPixel(x, y, new Color(n, n, n, 1f));
+            }
+        }
+        tex.Apply();
+        System.IO.File.WriteAllBytes(texPath, tex.EncodeToPNG());
+        AssetDatabase.ImportAsset(texPath);
+
+        var go = new GameObject("PaperNoiseOverlay");
+        go.transform.SetParent(canvas, false);
+        var raw = go.AddComponent<RawImage>();
+        raw.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+        raw.color = new Color(1f, 1f, 1f, 0.06f);
+        raw.raycastTarget = false;
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
     }
 
     private static void CreateGlobalVolume(Color vignetteColor, Color fogColor)
