@@ -176,10 +176,10 @@
 
 | 编号 | 任务 | 优先级 | 状态 | 验收标准 | 关联规范 |
 |---|---|---|---|---|---|
-| M4.2.1 | 实现 `BtnPrimary`、`BtnSecondary`、`BtnGhost` 三种按钮 | P1 | 部分完成 | 颜色、圆角、Hover/Press 效果符合 DESIGN §5.1–5.3 | DESIGN §5 |
+| M4.2.1 | 实现 `BtnPrimary`、`BtnSecondary`、`BtnGhost` 三种按钮 | P1 | 已完成 | 颜色、圆角、Hover/Press 效果符合 DESIGN §5.1–5.3 | DESIGN §5 |
 | M4.2.2 | 实现 `Card`、`ToolbarItem`、`ResourceDot`、`Seal`、`DialogOverlay`、`HintPill` 组件 | P1 | 未开始 | 尺寸、颜色、动画符合 DESIGN §5 | DESIGN §5 |
 | M4.2.3 | 页面切换动画 | P2 | 未开始 | 400ms ease-in-out 淡入 + 向上位移 12px | DESIGN §6.2 |
-| M4.2.4 | 按钮点击反馈 | P2 | 未开始 | 100ms ease-out 缩放 0.97 或背景色填充 | DESIGN §6.2 |
+| M4.2.4 | 按钮点击反馈 | P2 | 已完成 | 100ms ease-out 缩放 0.97 或背景色填充 | DESIGN §6.2 |
 | M4.2.5 | 响应式适配与安全区域 | P1 | 未开始 | 基准 375×812；宽度 > 430 居中留白；高度 < 700 压缩 HUD/Toolbar；顶部 44px / 底部 34px 安全区 | DESIGN §8 |
 
 ### M4.3 存档与设置持久化
